@@ -1,0 +1,7 @@
+*.dSYM/
+*.obj
+*.o
+*.out
+*.exe
+build/
+tla
