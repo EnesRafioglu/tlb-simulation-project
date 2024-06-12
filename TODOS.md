@@ -1,7 +1,5 @@
 # Aufgaben zum Anfang und zur Planung
 
-- Makefile
-- C Grundprogramm mit argument parsing
 - Input file parsing und validation
 - Struktur zur Implementierung der SystemC-Komponenten
   - Folder structure

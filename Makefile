@@ -8,6 +8,8 @@ HEADERS_CPP  := $(shell find * -name '*.hpp')
 OBJECTS_C    := $(addprefix build/,$(SOURCES_C:.c=.o))
 OBJECTS_CPP  := $(addprefix build/,$(SOURCES_CPP:.cpp=.o))
 
+SRC_DIRS     := $(shell find src -type d)
+
 SYSTEMC_PATH := ../systemc
 
 BUILD_DIR    := build
@@ -43,6 +45,7 @@ all: debug
 # Create build directory if it does not exist
 mkbuilddir:
 	$(shell mkdir -p $(BUILD_DIR))
+	$(foreach dir,$(SRC_DIRS),$(shell mkdir -p $(BUILD_DIR)/$(dir)))
 
 # Debug build
 debug: COMPILER_FLAGS_C   += $(COMPILER_FLAGS_DEBUG)
