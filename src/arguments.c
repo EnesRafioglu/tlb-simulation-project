@@ -1,0 +1,245 @@
+#include "arguments.h"
+
+#include <getopt.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "util.h"
+
+// Forward declarations
+
+bool maybe_print_requires_value(int opt);
+void print_usage();
+void validate_and_extract_number(char* argName, char* str, void* value,
+                                 bool isSigned, int min);
+
+/**
+ * @brief Enumeration of command line options.
+ *
+ * This enumeration defines the available command line options for the program.
+ * Each option is assigned a unique value, which can be used to identify the
+ * option. Options that also have a short version are mapped to their short
+ * version equivalent.
+ */
+enum OPTION {
+  OPTION_CYCLES = 'c',
+  OPTION_BLOCKSIZE = 1,
+  OPTION_V2B_BLOCK_OFFSET = 2,
+  OPTION_TLB_SIZE = 3,
+  OPTION_TLB_LATENCY = 4,
+  OPTION_MEMORY_LATENCY = 5,
+  OPTION_TRACE_FILE = 6,
+  OPTION_HELP = 'h',
+
+  /** Represents the value returned when an unknown option is encountered */
+  OPTION_UNKNOWN = '?',
+};
+
+/**
+ * @brief An array of long-form command line options.
+ *
+ * This array defines the command line options that can be passed to the
+ * program. Each element in the array represents a single option and its
+ * associated attributes.
+ */
+static struct option longArguments[] = {
+    {"cycles", required_argument, NULL, OPTION_CYCLES},
+    {"blocksize", required_argument, NULL, OPTION_BLOCKSIZE},
+    {"v2b-block-offset", required_argument, NULL, OPTION_V2B_BLOCK_OFFSET},
+    {"tlb-size", required_argument, NULL, OPTION_TLB_SIZE},
+    {"tlb-latency", required_argument, NULL, OPTION_TLB_LATENCY},
+    {"memory-latency", required_argument, NULL, OPTION_MEMORY_LATENCY},
+    {"tf", required_argument, NULL, OPTION_TRACE_FILE},
+    {"help", no_argument, NULL, OPTION_HELP},
+};
+
+void parse_arguments(int argc, char* argv[], struct Configuration* cnf) {
+  // Set sensible defaults
+  cnf->cycles = 1000;
+  cnf->blocksize = 64;
+  cnf->v2bBlockOffset = 0;
+  cnf->tlbSize = 16;
+  cnf->tlbLatency = 10;
+  cnf->memoryLatency = 100;
+  cnf->traceFile = NULL;
+
+  cnf->inputFile = NULL;
+
+  // Parse the command line arguments
+  int opt;
+  opterr = 0;
+  while (optind < argc) {
+    if ((opt = getopt_long(argc, argv, "c:h", longArguments, NULL)) != -1) {
+      switch (opt) {
+        case OPTION_CYCLES:
+          validate_and_extract_number("cycles", optarg, &cnf->cycles, true, 1);
+          break;
+        case OPTION_BLOCKSIZE:
+          validate_and_extract_number("blocksize", optarg, &cnf->blocksize,
+                                      false, 1);
+          break;
+        case OPTION_V2B_BLOCK_OFFSET:
+          validate_and_extract_number("v2b-block-offset", optarg,
+                                      &cnf->v2bBlockOffset, false, 0);
+          break;
+        case OPTION_TLB_SIZE:
+          validate_and_extract_number("tlb-size", optarg, &cnf->tlbSize, false,
+                                      1);
+          break;
+        case OPTION_TLB_LATENCY:
+          validate_and_extract_number("tlb-latency", optarg, &cnf->tlbLatency,
+                                      false, 0);
+          break;
+        case OPTION_MEMORY_LATENCY:
+          validate_and_extract_number("memory-latency", optarg,
+                                      &cnf->memoryLatency, false, 0);
+          break;
+        case OPTION_TRACE_FILE:
+          cnf->traceFile = optarg;
+          break;
+        case OPTION_HELP:
+          print_usage();
+          exit(0);
+        case OPTION_UNKNOWN:
+          if (!maybe_print_requires_value(optopt)) {
+            fprintf(stderr, "Error: Invalid option: -%c\n\n", optopt);
+          }
+
+          print_usage();
+          exit(22);
+        default:
+          exit(22);
+      }
+    } else {
+      // Check if the input file has already been set
+      if (cnf->inputFile != NULL) {
+        fprintf(stderr, "Error: Multiple input files specified\n\n");
+        print_usage();
+        exit(22);
+      }
+
+      // Set the input file
+      cnf->inputFile = argv[optind];
+      optind++;
+    }
+  }
+}
+
+/**
+ * Checks if a given option requires a value and prints an error message if it
+ * does.
+ *
+ * @param opt The option to check.
+ * @return true if the option requires a value, false otherwise.
+ */
+bool maybe_print_requires_value(int opt) {
+  switch (opt) {
+    case OPTION_CYCLES:
+      fprintf(stderr, "Error: --cycles requires a value\n\n");
+      break;
+    case OPTION_BLOCKSIZE:
+      fprintf(stderr, "Error: --blocksize requires a value\n\n");
+      break;
+    case OPTION_V2B_BLOCK_OFFSET:
+      fprintf(stderr, "Error: --v2b-block-offset requires a value\n\n");
+      break;
+    case OPTION_TLB_SIZE:
+      fprintf(stderr, "Error: --tlb-size requires a value\n\n");
+      break;
+    case OPTION_TLB_LATENCY:
+      fprintf(stderr, "Error: --tlb-latency requires a value\n\n");
+      break;
+    case OPTION_MEMORY_LATENCY:
+      fprintf(stderr, "Error: --memory-latency requires a value\n\n");
+      break;
+    case OPTION_TRACE_FILE:
+      fprintf(stderr, "Error: --tf requires a value\n\n");
+      break;
+    default:
+      return false;
+  }
+
+  return true;
+}
+
+/**
+ * @brief Prints the usage information for the program.
+ *
+ * This function prints the usage information for the program, including the
+ * available options and their descriptions.
+ */
+void print_usage() {
+  printf("Usage: ./tla [OPTIONS] INPUT_FILE\n");
+  printf("Options:\n");
+  printf("  --cycles=<int>\t\tNumber of cycles to simulate\n");
+  printf("  --blocksize=<unsigned>\tSize of a memory block in bytes\n");
+  printf(
+      "  --v2b-block-offset=<unsigned>\tOffset used to \"translate\" virtual "
+      "addresses to physical ones\n");
+  printf("  --tlb-size=<unsigned>\t\tNumber of entries in the TLB\n");
+  printf("  --tlb-latency=<unsigned>\tThe latency of the TLB in cycles\n");
+  printf(
+      "  --memory-latency=<unsigned>\tThe latency of the main memory in "
+      "cycles\n");
+  printf("  --tf=<path>\t\t\tOutput path for a trace file with all signals\n");
+  printf("  --help\t\t\tPrint this help message\n");
+}
+
+/**
+ * Validates and extracts a number from a string.
+ *
+ * This function parses the given string to an integer or unsigned integer,
+ * depending on the value of `isSigned`. It then checks if the parsing was
+ * successful and if the parsed value is greater than or equal to the minimum
+ * value specified by `min`. If any validation fails, an error message is
+ * printed and the program exits with a status code of 22.
+ *
+ * @param argName The name of the argument being validated.
+ * @param str The string to parse.
+ * @param value A pointer to the variable where the parsed value will be stored.
+ * @param isSigned A boolean indicating whether the value should be treated as
+ *                 signed or unsigned.
+ * @param min The minimum value that the parsed value must be greater than or
+ *            equal to.
+ */
+void validate_and_extract_number(char* argName, char* str, void* value,
+                                 bool isSigned, int min) {
+  // Parse the string to an integer
+  enum PARSE_RESULT result;
+  if (isSigned) {
+    result = parse_string_to_int(str, value);
+  } else {
+    result = parse_string_to_uint(str, value);
+  }
+
+  // Check if the parsing was successful
+  switch (result) {
+    case PARSE_SUCCESS:
+      break;
+    case PARSE_OUT_OF_RANGE:
+      fprintf(stderr, "Error: %s is out of range\n\n", argName);
+      print_usage();
+      exit(22);
+    case PARSE_NO_DIGITS:
+      fprintf(stderr, "Error: %s does not contain any digits\n\n", argName);
+      print_usage();
+      exit(22);
+    case PARSE_CHARACTERS_LEFT:
+      fprintf(stderr, "Error: %s contains extra characters\n\n", argName);
+      print_usage();
+      exit(22);
+    case PARSE_GENERAL_ERROR:
+      fprintf(stderr, "Error: %s is not a valid number\n\n", argName);
+      print_usage();
+      exit(22);
+  }
+
+  // Check if the value is greater than or equal to the minimum
+  if (*(int*)value < min) {
+    fprintf(stderr, "Error: %s must be greater than or equal to %d\n\n",
+            argName, min);
+    print_usage();
+    exit(22);
+  }
+}
