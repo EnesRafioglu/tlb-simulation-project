@@ -1,3 +1,7 @@
+#!/bin/bash
+
+set -e
+
 # Build the tests
 cmake -S . -B build
 cmake --build build
