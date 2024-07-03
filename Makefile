@@ -17,12 +17,12 @@ OUTPUT       := tla
 
 
 #* Define the compiler and flags
-COMPILER_FLAGS_C       := -std=gnu17 -Wall -Wextra
-COMPILER_FLAGS_CPP     := -std=gnu++14 -Wall -Wextra -I$(SYSTEMC_PATH)/include
+COMPILER_FLAGS_C       := -std=gnu17 -Wall -Wextra -DLANG_C
+COMPILER_FLAGS_CPP     := -std=gnu++14 -Wall -Wextra -I$(SYSTEMC_PATH)/include -DLANG_CPP
 
 LINKER_FLAGS           := -L$(SYSTEMC_PATH)/lib -lsystemc -Wl,-rpath,$(SYSTEMC_PATH)/lib
 
-COMPILER_FLAGS_DEBUG   := -g
+COMPILER_FLAGS_DEBUG   := -g -fsanitize=address -fsanitize=undefined -DDEBUG
 COMPILER_FLAGS_RELEASE := -O2
 
 

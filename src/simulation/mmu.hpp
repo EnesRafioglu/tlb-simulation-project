@@ -1,0 +1,73 @@
+#pragma once
+
+#include <systemc>
+
+#include "tlb.hpp"
+#include "memory.hpp"
+
+using namespace sc_core;
+
+SC_MODULE(MMU) {
+public:
+  SC_HAS_PROCESS(MMU);
+
+  /** Signal that indicates whether the current value of `dateIn` should be persisted */
+  sc_in<bool> writeEnabled;
+  /** Current address all operations relate to */
+  sc_in<uint32_t> address;
+  /** Data that should potentially be written to memory */
+  sc_in<uint32_t> dataIn;
+  /** Data currently in the memory cell at `address` */
+  sc_out<uint32_t> dataOut;
+
+  /** Virtual address that should be looked up */
+  sc_out<uint32_t> tlbVirtualAddress;
+  /** Possibly found matching physical address */
+  sc_in<uint32_t> tlbPhysicalAddress;
+  /** Signal that indicates whether a matching physical address was found */
+  sc_in<bool> tlbFound;
+
+  /** Singnal that indicated whether the memory module should persist the input data */
+  sc_out<bool> memWriteEnabled;
+  /** Physical address that the memory should use */
+  sc_out<uint32_t> memAddress;
+  /** Data that should be written to memory */
+  sc_out<uint32_t> memDataIn;
+  /** Data that was read from memory */
+  sc_in<uint32_t> memDataOut;
+
+  /** Event that signals to the CPU that the current operation is done */
+  sc_event mmuDone;
+
+private:
+  /** Translation Lookaside Buffer used by the MMU */
+  TLB* tlb;
+
+  /** Latency of the TLB */
+  unsigned int tlbsLatency;
+  /** Latency of the memory access */
+  unsigned int memoryLatency;
+
+  //* Signals used for communication between the MMU and the TLB/Memory modules
+  // For documentation on the signals, see the corresponding port declarations above
+
+  sc_signal<uint32_t> sigTlbVirtualAddress;
+  sc_signal<uint32_t> sigTlbPhysicalAddress;
+  sc_signal<bool> sigTlbFound;
+
+  sc_signal<bool> sigMemWriteEnabled;
+  sc_signal<uint32_t> sigMemAddress;
+  sc_signal<uint32_t> sigMemDataIn;
+  sc_signal<uint32_t> sigMemDataOut;
+
+public:
+  MMU(sc_module_name name, TLB* tlb, Memory* memory, unsigned int tlbsLatency, unsigned int memoryLatency);
+
+private:
+  /** @brief Method that is called on the positive edge of the clock signal.
+   * 
+   * This method is responsible for writing values into memory when `writeEnabled` is true.
+   * It also reads values from memory and sets `dataOut` to the value stored at `address`.
+   */
+  void mmuOperation();
+};
