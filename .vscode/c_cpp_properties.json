@@ -1,0 +1,15 @@
+{
+    "configurations": [
+        {
+            "name": "tla_project",
+            "includePath": [
+                "${default}",
+                "${workspaceFolder}/../systemc/include",
+                "${workspaceFolder}/tests/build/_deps/googletest-src/googletest/include"
+            ],
+            "cStandard": "c17",
+            "cppStandard": "c++14"
+        }
+    ],
+    "version": 4
+}
