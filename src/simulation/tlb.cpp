@@ -7,7 +7,7 @@ TLB::TLB(
   unsigned int tlbSize,
   unsigned int blocksize,
   unsigned int v2bBlockOffset
-) : sc_module(name), blocksize(blocksize), v2bBlockOffset(v2bBlockOffset), numHits(0), numMisses(0) {
+) : sc_module(name), blocksize(blocksize), v2bBlockOffset(v2bBlockOffset) {
   // Calculate the number of offset and index bits
 
   // TODO: Check blocksize and tlbSize for power of 2
@@ -18,14 +18,6 @@ TLB::TLB(
   SC_THREAD(tlbOperation);
 
   sensitive << virtualAddress;
-}
-
-unsigned int TLB::getNumHits() const {
-  return numHits;
-}
-
-unsigned int TLB::getNumMisses() const {
-  return numMisses;
 }
 
 uint32_t TLB::store(uint32_t virtualAddress) {
@@ -105,8 +97,6 @@ void TLB::tlbOperation() {
       #ifdef DEBUG
       std::cout << " -> Hit: 0x" << std::hex << it->second.physicalAddresses[location.offset] << std::endl;
       #endif
-
-      numHits++;
     } else {
       // No matching physical address found -> Miss
       found.write(false);
@@ -114,8 +104,6 @@ void TLB::tlbOperation() {
       #ifdef DEBUG
       std::cout << " -> Miss" << std::endl;
       #endif
-
-      numMisses++;
     }
 
     wait();

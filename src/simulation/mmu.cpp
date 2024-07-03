@@ -6,7 +6,7 @@ MMU::MMU(
   Memory* memory,
   unsigned int tlbsLatency,
   unsigned int memoryLatency
-) : sc_module(name), tlb(tlb), tlbsLatency(tlbsLatency), memoryLatency(memoryLatency) {
+) : sc_module(name), tlb(tlb), tlbsLatency(tlbsLatency), memoryLatency(memoryLatency), numHits(0), numMisses(0) {
   // Wire up the tlb module
   tlbVirtualAddress(sigTlbVirtualAddress);
   tlbPhysicalAddress(sigTlbPhysicalAddress);
@@ -35,6 +35,14 @@ MMU::MMU(
   sensitive << address << writeEnabled << dataIn;
 }
 
+unsigned int MMU::getNumHits() const {
+  return numHits;
+}
+
+unsigned int MMU::getNumMisses() const {
+  return numMisses;
+}
+
 void MMU::mmuOperation() {
   wait(SC_ZERO_TIME);
 
@@ -51,12 +59,16 @@ void MMU::mmuOperation() {
     uint32_t physicalAddress = tlbPhysicalAddress.read();
 
     if (!found) {
+      numMisses++;
+
       // If the TLB didn't find the physical address, we need to calculate it
       physicalAddress = tlb->store(virtualAddress);
 
       // Calculating the physical address would normally require a memory access
       // We simulate this by waiting for the memory latency
       wait(memoryLatency, SC_NS);
+    } else {
+      numHits++;
     }
 
     #ifdef DEBUG

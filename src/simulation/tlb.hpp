@@ -58,11 +58,6 @@ private:
   /** Offset for virtual to block address translation */
   unsigned int v2bBlockOffset;
 
-  /** Number of cache hits */
-  unsigned int numHits;
-  /** Number of cache misses */
-  unsigned int numMisses;
-
   /** Number of offset bits */
   unsigned int numOffsetBits;
   /** Number of index bits */
@@ -86,20 +81,6 @@ public:
    * the system and do the calculation in the TLB.
    */
   uint32_t store(uint32_t virtualAddress);
-
-  /**
-   * @brief Returns the number of hits in the TLB.
-   *
-   * @return The number of hits in the TLB.
-   */
-  unsigned int getNumHits() const;
-
-  /**
-   * @brief Returns the number of cache misses.
-   *
-   * @return The number of cache misses.
-   */
-  unsigned int getNumMisses() const;
 
 private:
   /**

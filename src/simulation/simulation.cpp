@@ -66,7 +66,7 @@ extern "C" Result run_simulation(
   unsigned int numCycles = sc_time_stamp().value() / 1000;
 
   // Return a dummy result
-  return Result{numCycles, tlb.getNumMisses(), tlb.getNumHits(), 0};
+  return Result{numCycles, mmu.getNumMisses(), mmu.getNumHits(), 0};
 }
 
 // Leave this function as-is, it is required by the SystemC library but will not be used.

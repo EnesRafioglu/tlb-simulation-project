@@ -48,6 +48,15 @@ private:
   /** Latency of the memory access */
   unsigned int memoryLatency;
 
+  //? We count the number of hits here and not in the TLB module because the
+  //? TLB would not increase the hit count if two consecutive virtual addresses
+  //? are the same. This is because of the TLB sensitivity list.
+
+  /** Number of TLB cache hits */
+  unsigned int numHits;
+  /** Number of TLB cache misses */
+  unsigned int numMisses;
+
   //* Signals used for communication between the MMU and the TLB/Memory modules
   // For documentation on the signals, see the corresponding port declarations above
 
@@ -63,6 +72,19 @@ private:
 public:
   MMU(sc_module_name name, TLB* tlb, Memory* memory, unsigned int tlbsLatency, unsigned int memoryLatency);
 
+  /**
+   * @brief Returns the number of hits in the TLB.
+   *
+   * @return The number of hits in the TLB.
+   */
+  unsigned int getNumHits() const;
+
+  /**
+   * @brief Returns the number of cache misses.
+   *
+   * @return The number of cache misses.
+   */
+  unsigned int getNumMisses() const;
 private:
   /** @brief Method that is called on the positive edge of the clock signal.
    * 
