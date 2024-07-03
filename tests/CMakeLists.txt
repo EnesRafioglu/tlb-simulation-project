@@ -48,6 +48,22 @@ file (GLOB_RECURSE APP_SOURCES_CPP CONFIGURE_DEPENDS "../src/*.cpp")
 file (GLOB_RECURSE APP_HEADERS_C CONFIGURE_DEPENDS "../src/*.h")
 file (GLOB_RECURSE APP_HEADERS_CPP CONFIGURE_DEPENDS "../src/*.hpp")
 
+# Convert the list of headers to a list of include directories
+set (APP_INCLUDE_DIRS_C "")
+foreach(HEADER ${APP_HEADERS_C})
+  get_filename_component(DIR ${HEADER} DIRECTORY)
+  list(APPEND APP_INCLUDE_DIRS_C ${DIR})
+endforeach()
+
+set (APP_INCLUDE_DIRS_CPP "")
+foreach(HEADER ${APP_HEADERS_CPP})
+  get_filename_component(DIR ${HEADER} DIRECTORY)
+  list(APPEND APP_INCLUDE_DIRS_CPP ${DIR})
+endforeach()
+
+list(REMOVE_DUPLICATES APP_INCLUDE_DIRS_C)
+list(REMOVE_DUPLICATES APP_INCLUDE_DIRS_CPP)
+
 # Remove the main file from the test sources
 list(FILTER APP_SOURCES_C EXCLUDE REGEX "main.c")
 
@@ -60,7 +76,7 @@ add_executable(
 target_include_directories(
   c_tests
   PRIVATE
-  ${APP_HEADERS_C}
+  ${APP_INCLUDE_DIRS_C}
 )
 target_link_libraries(
   c_tests
@@ -80,7 +96,7 @@ add_executable(
 target_include_directories(
   cpp_tests
   PRIVATE
-  ${APP_HEADERS_CPP}
+  ${APP_INCLUDE_DIRS_CPP}
 )
 target_link_libraries(
   cpp_tests
