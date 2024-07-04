@@ -127,8 +127,13 @@ struct Request* parse_csv(const char* filename, int* line_count) {
 
     
     while(fgets(buffer, sizeof(buffer), file)) {
+        //empty lines aren't allowed in csv files except for the last line
         if (buffer[0] == '\n' || buffer[0] == '\r'	) {
-            continue;
+            fprintf(stderr, "Error: Empty lines are not allowed (except for the last line)\n\texample inputs: R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n");
+            
+            fclose(file);
+            free(requests);
+            exit(22);
         }
 
         //check if the line is too long
@@ -145,13 +150,10 @@ struct Request* parse_csv(const char* filename, int* line_count) {
 
         //erase newline character at end of line, as this would 
         //cause the string to int parsing to fail
-        char* new_line = strchr(buffer, '\n');
+        char* new_line = strchr(buffer, '\r');
         if (new_line) {
             *new_line = '\0';
-        }
-
-        new_line = strchr(buffer, '\r');
-        if (new_line) {
+        } else if ((new_line = strchr(buffer, '\n'))) {
             *new_line = '\0';
         }
         
