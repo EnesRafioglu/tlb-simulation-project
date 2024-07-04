@@ -21,6 +21,9 @@ SC_MODULE(TLB) {
 public:
   SC_HAS_PROCESS(TLB);
 
+  /** Clock used for processing requests */
+  sc_in<bool> clk;
+
   /** Page number of the virtual address that should be looked up */
   sc_in<uint32_t> virtualPageNumber;
   /** Possibly found matching physical frame number */

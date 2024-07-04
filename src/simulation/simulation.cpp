@@ -82,6 +82,7 @@ extern "C" Result run_simulation(
 
   //* Wire up the SystemC modules
   sc_clock clk("clk", sc_time(1, SC_NS));
+  tlb.clk(clk);
   memory.clk(clk);
   cpu.clk(clk);
 

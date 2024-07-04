@@ -15,7 +15,7 @@ TLB::TLB(
   // Register the TLB operation method and sensitivity list
   SC_THREAD(tlbOperation);
 
-  sensitive << virtualPageNumber;
+  sensitive << clk.pos() << virtualPageNumber;
 }
 
 void TLB::store(uint32_t virtualPage, uint32_t physicalFrame) {
