@@ -27,11 +27,11 @@ public:
   /** Data currently in the memory cell at `address` */
   sc_out<uint32_t> dataOut;
 
-  /** Virtual address that should be looked up */
-  sc_out<uint32_t> tlbVirtualAddress;
-  /** Possibly found matching physical address */
-  sc_in<uint32_t> tlbPhysicalAddress;
-  /** Signal that indicates whether a matching physical address was found */
+  /** Page number of the virtual address that should be looked up */
+  sc_out<uint32_t> tlbVirtualPageNumber;
+  /** Possibly found matching physical frame number */
+  sc_in<uint32_t> tlbPhysicalFrameNumber;
+  /** Signal that indicates whether a matching physical frame was found */
   sc_in<bool> tlbFound;
 
   /** Singnal that indicated whether the memory module should persist the input data */
@@ -50,10 +50,17 @@ private:
   /** Translation Lookaside Buffer used by the MMU */
   TLB* tlb;
 
+  /** Offset for virtual to block address translation */
+  unsigned int v2bBlockOffset;
   /** Latency of the TLB */
   unsigned int tlbsLatency;
   /** Latency of the memory access */
   unsigned int memoryLatency;
+
+  /** Number of leading bits of the virtual address used to translate the
+   * virtual memory page to a physical memory frame
+   */
+  unsigned int numPageBits;
 
   //? We count the number of hits here and not in the TLB module because the
   //? TLB would not increase the hit count if two consecutive virtual addresses
@@ -67,8 +74,8 @@ private:
   //* Signals used for communication between the MMU and the TLB/Memory modules
   // For documentation on the signals, see the corresponding port declarations above
 
-  sc_signal<uint32_t> sigTlbVirtualAddress;
-  sc_signal<uint32_t> sigTlbPhysicalAddress;
+  sc_signal<uint32_t> sigTlbVirtualPageNumber;
+  sc_signal<uint32_t> sigTlbPhysicalFrameNumber;
   sc_signal<bool> sigTlbFound;
 
   sc_signal<bool> sigMemWriteEnabled;
@@ -77,7 +84,15 @@ private:
   sc_signal<uint32_t> sigMemDataOut;
 
 public:
-  MMU(sc_module_name name, TLB* tlb, Memory* memory, unsigned int tlbsLatency, unsigned int memoryLatency);
+  MMU(
+    sc_module_name name,
+    TLB* tlb,
+    Memory* memory,
+    unsigned int blocksize,
+    unsigned int v2bBlockOffset,
+    unsigned int tlbsLatency,
+    unsigned int memoryLatency
+  );
 
   /**
    * @brief Returns the number of hits in the TLB.

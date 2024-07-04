@@ -1,19 +1,27 @@
 #include "mmu.hpp"
 
+#include "util.hpp"
+
 MMU::MMU(
   sc_module_name name,
   TLB* tlb,
   Memory* memory,
+  unsigned int blocksize,
+  unsigned int v2bBlockOffset,
   unsigned int tlbsLatency,
   unsigned int memoryLatency
-) : sc_module(name), tlb(tlb), tlbsLatency(tlbsLatency), memoryLatency(memoryLatency), numHits(0), numMisses(0) {
+) : sc_module(name), tlb(tlb), v2bBlockOffset(v2bBlockOffset), tlbsLatency(tlbsLatency), memoryLatency(memoryLatency), numHits(0), numMisses(0) {
+  // Calculate the number of bits used for the page number
+  // We can simplify this calculation because both virtual and physical addresses are 32 bits
+  numPageBits = 32 - std::log2(blocksize);
+  
   // Wire up the tlb module
-  tlbVirtualAddress(sigTlbVirtualAddress);
-  tlbPhysicalAddress(sigTlbPhysicalAddress);
+  tlbVirtualPageNumber(sigTlbVirtualPageNumber);
+  tlbPhysicalFrameNumber(sigTlbPhysicalFrameNumber);
   tlbFound(sigTlbFound);
 
-  tlb->virtualAddress(sigTlbVirtualAddress);
-  tlb->physicalAddress(sigTlbPhysicalAddress);
+  tlb->virtualPageNumber(sigTlbVirtualPageNumber);
+  tlb->physicalFrameNumber(sigTlbPhysicalFrameNumber);
   tlb->found(sigTlbFound);
 
   // Wire up the memory module
@@ -50,26 +58,35 @@ void MMU::mmuOperation() {
     // Read the address from the CPU
     uint32_t virtualAddress = address.read();
 
-    // Send the virtual address to the TLB and wait for the TLB to find the physical address
-    tlbVirtualAddress.write(virtualAddress);
+    // Extract the virtual page number from the virtual address
+    uint32_t virtualPageNumber = takeLeadingNBits(virtualAddress, numPageBits);
+
+    // Send the virtual address page to the TLB and wait for the TLB to find the physical frame
+    tlbVirtualPageNumber.write(virtualPageNumber);
     wait(tlbsLatency, SC_NS);
 
-    // Check if the TLB found the physical address
+    // Check if the TLB found the physical frame
     bool found = tlbFound.read();
-    uint32_t physicalAddress = tlbPhysicalAddress.read();
+    uint32_t physicalFrame = tlbPhysicalFrameNumber.read();
 
     if (!found) {
       numMisses++;
 
-      // If the TLB didn't find the physical address, we need to calculate it
-      physicalAddress = tlb->store(virtualAddress);
+      // If the TLB didn't find the physical frame, we need to calculate it
+      physicalFrame = virtualPageNumber + v2bBlockOffset;
 
       // Calculating the physical address would normally require a memory access
       // We simulate this by waiting for the memory latency
       wait(memoryLatency, SC_NS);
+
+      // Store the translation in the TLB for future use
+      tlb->store(virtualPageNumber, physicalFrame);
     } else {
       numHits++;
     }
+
+    // Calculate the physical address
+    uint32_t physicalAddress = (physicalFrame << (32 - numPageBits)) | takeTrailingNBits(virtualAddress, (32 - numPageBits));
 
     #ifdef DEBUG
     std::cout << "MMU: " << (found ? "TLB hit" : "TLB miss") << " for virtual address 0x" << std::hex << virtualAddress << " -> physical address 0x" << physicalAddress << std::endl;

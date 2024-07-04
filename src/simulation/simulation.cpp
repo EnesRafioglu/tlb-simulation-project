@@ -39,17 +39,43 @@ extern "C" Result run_simulation(
   }
 
   std::cout << std::endl;
+
+  // Calculate the bit parts of the virtual address
+  // TODO: Check blocksize and tlbSize for power of 2
+  // TODO: Blocksize must also be devisible by 4 and >= 4!
+  long numberOfPageTableEntries = 4294967296 / (long)blocksize;
+  unsigned int numPageBits = std::log2(numberOfPageTableEntries);
+  unsigned int numIndexBits = std::log2(tlbSize);
+  unsigned int numTagBits = numPageBits - numIndexBits;
+  unsigned int numOffsetBits = std::log2(blocksize);
+
+  if(numTagBits + numIndexBits + numOffsetBits != 32) {
+    std::cerr << "Address format does not add up to 32 bits" << std::endl;
+    exit(1);
+  };
+
+  std::cout << "Address format: ";
+  if (numTagBits > 0) {
+    std::cout << "[" << std::string(numTagBits, 'T') << "]";
+  }
+  if (numIndexBits > 0) {
+    std::cout << "[" << std::string(numIndexBits, 'I') << "]";
+  }
+  if (numOffsetBits > 0) {
+    std::cout << "[" << std::string(numOffsetBits, 'O') << "]";
+  }
+  std::cout << "\n" << std::endl;
   #endif
 
   //* Create SystemC modules
   // Create the TLB
-  TLB tlb("tlb", tlbSize, blocksize, v2bBlockOffset);
+  TLB tlb("tlb", tlbSize, blocksize);
 
   // Create the Memory
   Memory memory("memory");
 
   // Create the MMU
-  MMU mmu("mmu", &tlb, &memory, tlbsLatency, memoryLatency);
+  MMU mmu("mmu", &tlb, &memory, blocksize, v2bBlockOffset, tlbsLatency, memoryLatency);
 
   // Create the CPU
   CPU cpu("cpu", &mmu, numRequests, requests);
