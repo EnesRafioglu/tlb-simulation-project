@@ -7,6 +7,13 @@
 
 using namespace sc_core;
 
+/**
+ * @brief SystemC module representing the Memory Management Unit (MMU).
+ *
+ * The MMU is responsible for managing the memory operations in a computer system.
+ * It handles address translation, data read/write operations, and communication with the Translation Lookaside Buffer (TLB) and Memory modules.
+ * This module contains input and output ports for various signals related to memory operations.
+ */
 SC_MODULE(MMU) {
 public:
   SC_HAS_PROCESS(MMU);
