@@ -1,9 +1,15 @@
+#include <limits.h>
 #include <stdio.h>
 
 #include "arguments.h"
 #include "simulation/simulation.hpp"
 
 int main(int argc, char *argv[]) {
+  // Check if the architecture is supported
+  if (check_architecture() != 0) {
+    return 1;
+  }
+
   struct Configuration cnf;
   parse_arguments(argc, argv, &cnf);
 
@@ -30,6 +36,34 @@ int main(int argc, char *argv[]) {
   printf("Simulation took %zu cycles\n", result.cycles);
   printf("Simulation had %zu misses\n", result.misses);
   printf("Simulation had %zu hits\n", result.hits);
+
+  return 0;
+}
+/**
+ * Checks the architecture compatibility of the system.
+ *
+ * This function checks if the architecture meets the requirements for the
+ * program to run. It verifies that the size of a byte is 8 bits and the size of
+ * an int is 32 bits.
+ *
+ * @return 0 if the architecture is supported, 1 otherwise.
+ */
+int check_architecture() {
+  // Check if the size of a byte is 8 bits
+  if (CHAR_BIT != 8) {
+    fprintf(stderr,
+            "Error: Architecture is not supported, the size of one byte is not "
+            "8 bits\n");
+    return 1;
+  }
+
+  // Check if the size of an int is 32 bits
+  if (sizeof(int) != 4) {
+    fprintf(stderr,
+            "Error: Architecture is not supported, the size of an integer is "
+            "not 32 bits\n");
+    return 1;
+  }
 
   return 0;
 }
