@@ -6,9 +6,12 @@
 //? compiler will not even see the logging calls in release mode.
 
 #ifdef DEBUG
+
+//? Include the necessary headers for the logging implementation
 #include <iostream>
 #include <ctime>
 #include <iomanip>
+
 
 #define _debug_log_impl(message) {                                                               \
   const time_t current_time = std::time(nullptr);                                               \
@@ -19,6 +22,8 @@
 #define _debug_log_scope_impl(scope, message) _debug_log_impl("[" << scope << "] " << message)
 
 #else
+
+//? If the DEBUG define is not set, the logging calls will expand to nothing -> optimized out.
 
 #define _debug_log_impl(message)
 #define _debug_log_scope_impl(scope, message)
@@ -32,6 +37,6 @@
  * @brief Log a message when compiled in debug mode.
  *
  * @param scope The scope of the log message (optional) - used when two arguments are passed.
- * @param message The message to log.
+ * @param message The message to log (can be in stream format).
  */
 #define debug_log(...) _select__debug_log_impl(__VA_ARGS__, _debug_log_scope_impl, _debug_log_impl)(__VA_ARGS__)
