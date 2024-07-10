@@ -71,7 +71,7 @@ public:
    * @param virtualPage The page number of the virtual address to store in the TLB.
    * @param physicalFrame The frame number of the physical address to store in the TLB.
    */
-  void store(uint32_t virtualPage, uint32_t physicalFrame);
+  void store(const uint32_t virtualPage, const uint32_t physicalFrame);
 
 private:
   /**

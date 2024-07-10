@@ -9,7 +9,7 @@
  * @param n The number of leading bits to take.
  * @return The resulting value with only the leading N bits.
  */
-uint32_t takeLeadingNBits(uint32_t value, unsigned int n);
+uint32_t takeLeadingNBits(const uint32_t value, const unsigned int n);
 
 /**
  * Takes the trailing N bits from the given value.
@@ -18,4 +18,4 @@ uint32_t takeLeadingNBits(uint32_t value, unsigned int n);
  * @param n The number of trailing bits to take.
  * @return The resulting value with only the trailing N bits.
  */
-uint32_t takeTrailingNBits(uint32_t value, unsigned int n);
+uint32_t takeTrailingNBits(const uint32_t value, const unsigned int n);

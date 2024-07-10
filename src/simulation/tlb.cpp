@@ -18,7 +18,7 @@ TLB::TLB(
   sensitive << clk.pos() << virtualPageNumber;
 }
 
-void TLB::store(uint32_t virtualPage, uint32_t physicalFrame) {
+void TLB::store(const uint32_t virtualPage, const uint32_t physicalFrame) {
   // Compute the cache location
   TLB::CacheLocation location = computeLocation(virtualPage);
 
@@ -45,9 +45,9 @@ void TLB::tlbOperation() {
 
   while (true) {
     // Compute the cache location
-    TLB::CacheLocation location = computeLocation(virtualPageNumber.read().to_uint());
+    const TLB::CacheLocation location = computeLocation(virtualPageNumber.read().to_uint());
 
-    auto it = tlbCache.find(location.index);
+    const auto it = tlbCache.find(location.index);
 
     #ifdef DEBUG
     std::cout << "TLB: Received virtual page 0x" << std::hex << virtualPageNumber.read() << " with tag 0x" << location.tag << std::dec << " and index " << location.index;

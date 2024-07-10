@@ -43,11 +43,11 @@ extern "C" Result run_simulation(
   // Calculate the bit parts of the virtual address
   // TODO: Check blocksize and tlbSize for power of 2
   // TODO: Blocksize must also be devisible by 4 and >= 4!
-  long numberOfPageTableEntries = 4294967296 / (long)blocksize;
-  unsigned int numPageBits = std::log2(numberOfPageTableEntries);
-  unsigned int numIndexBits = std::log2(tlbSize);
-  unsigned int numTagBits = numPageBits - numIndexBits;
-  unsigned int numOffsetBits = std::log2(blocksize);
+  const long numberOfPageTableEntries = 4294967296 / (long)blocksize;
+  const unsigned int numPageBits = std::log2(numberOfPageTableEntries);
+  const unsigned int numIndexBits = std::log2(tlbSize);
+  const unsigned int numTagBits = numPageBits - numIndexBits;
+  const unsigned int numOffsetBits = std::log2(blocksize);
 
   if(numTagBits + numIndexBits + numOffsetBits != 32) {
     std::cerr << "Address format does not add up to 32 bits" << std::endl;
@@ -90,7 +90,7 @@ extern "C" Result run_simulation(
   std::cout << "Starting simulation with " << cycles << " cycles" << std::endl;
   sc_start(cycles, SC_NS);
 
-  unsigned int numCycles = sc_time_stamp().value() / 1000;
+  const unsigned int numCycles = sc_time_stamp().value() / 1000;
 
   // Return a dummy result
   return Result{numCycles, mmu.getNumMisses(), mmu.getNumHits(), 0};

@@ -56,17 +56,17 @@ void MMU::mmuOperation() {
 
   while(true) {
     // Read the address from the CPU
-    uint32_t virtualAddress = address.read().to_uint();
+    const uint32_t virtualAddress = address.read().to_uint();
 
     // Extract the virtual page number from the virtual address
-    uint32_t virtualPageNumber = takeLeadingNBits(virtualAddress, numPageBits);
+    const uint32_t virtualPageNumber = takeLeadingNBits(virtualAddress, numPageBits);
 
     // Send the virtual address page to the TLB and wait for the TLB to find the physical frame
     tlbVirtualPageNumber.write(virtualPageNumber);
     wait(tlbsLatency, SC_NS);
 
     // Check if the TLB found the physical frame
-    bool found = tlbFound.read();
+    const bool found = tlbFound.read();
     uint32_t physicalFrame = tlbPhysicalFrameNumber.read().to_uint();
 
     if (!found) {
@@ -86,7 +86,7 @@ void MMU::mmuOperation() {
     }
 
     // Calculate the physical address
-    uint32_t physicalAddress = (physicalFrame << (32 - numPageBits)) | takeTrailingNBits(virtualAddress, (32 - numPageBits));
+    const uint32_t physicalAddress = (physicalFrame << (32 - numPageBits)) | takeTrailingNBits(virtualAddress, (32 - numPageBits));
 
     #ifdef DEBUG
     std::cout << "MMU: " << (found ? "TLB hit" : "TLB miss") << " for virtual address 0x" << std::hex << virtualAddress << " -> physical address 0x" << physicalAddress << std::endl;

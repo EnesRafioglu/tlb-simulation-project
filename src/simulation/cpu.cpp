@@ -32,7 +32,7 @@ void CPU::cpuOperation() {
     }
 
     // Get the current request
-    Request* request = &requests[requestIndex];
+    Request* const request = &requests[requestIndex];
 
     #ifdef DEBUG
     std::cout << std::string(25, '+') << std::endl;
