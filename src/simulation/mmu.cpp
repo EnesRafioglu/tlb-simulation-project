@@ -1,6 +1,7 @@
 #include "mmu.hpp"
 
 #include "util.hpp"
+#include "logging.hpp"
 
 MMU::MMU(
   sc_module_name name,
@@ -88,9 +89,10 @@ void MMU::mmuOperation() {
     // Calculate the physical address
     const uint32_t physicalAddress = (physicalFrame << (32 - numPageBits)) | takeTrailingNBits(virtualAddress, (32 - numPageBits));
 
-    #ifdef DEBUG
-    std::cout << "MMU: " << (found ? "TLB hit" : "TLB miss") << " for virtual address 0x" << std::hex << virtualAddress << " -> physical address 0x" << physicalAddress << std::endl;
-    #endif
+    debug_log(
+      "MMU",
+      (found ? "TLB hit" : "TLB miss") << " for virtual address 0x" << std::hex << virtualAddress << " -> physical address 0x" << physicalAddress
+    );
 
     // Send the physical address etc. to the memory module and wait for the memory
     memAddress.write(physicalAddress);

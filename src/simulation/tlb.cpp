@@ -3,6 +3,7 @@
 #include <cmath>
 
 #include "util.hpp"
+#include "logging.hpp"
 
 TLB::TLB(
   sc_module_name name,
@@ -25,9 +26,10 @@ void TLB::store(const uint32_t virtualPage, const uint32_t physicalFrame) {
   // Insert the cache entry into the cache
   tlbCache[location.index] = { location.tag, physicalFrame };
 
-  #ifdef DEBUG
-  std::cout << "TLB: Stored virtual page 0x" << std::hex << virtualPage << " with tag 0x" << location.tag << std::dec << " and index " << location.index << std::hex << " -> physical frame 0x" << physicalFrame << std::endl;
-  #endif
+  debug_log(
+    "TLB",
+    "Stored virtual page 0x" << std::hex << virtualPage << " with tag 0x" << location.tag << std::dec << " and index " << location.index << " -> physical frame 0x" << physicalFrame
+  );
 }
 
 TLB::CacheLocation TLB::computeLocation(uint32_t virtualPage) const {
@@ -49,16 +51,21 @@ void TLB::tlbOperation() {
 
     const auto it = tlbCache.find(location.index);
 
-    #ifdef DEBUG
-    std::cout << "TLB: Received virtual page 0x" << std::hex << virtualPageNumber.read() << " with tag 0x" << location.tag << std::dec << " and index " << location.index;
-
+    debug_log(
+      "TLB",
+      "Received virtual page 0x" << std::hex << virtualPageNumber.read() << " with tag 0x" << location.tag << std::dec << " and index " << location.index
+    );
     if (it != tlbCache.end()) {
-      std::cout << " -> Found cache entry with tag 0x" << it->second.tag;
+      debug_log(
+        "TLB",
+        "Found cache entry with tag 0x" << it->second.tag
+      );
     } else {
-      std::cout << " -> No cache entry found";
+      debug_log(
+        "TLB",
+        "No cache entry found"
+      );
     }
-    #endif
-
 
     // Check if the cache entry exists and if the tag matches
     if (it != tlbCache.end() && it->second.tag == location.tag) {
@@ -66,16 +73,12 @@ void TLB::tlbOperation() {
       physicalFrameNumber.write(it->second.frameNumber);
       found.write(true);
 
-      #ifdef DEBUG
-      std::cout << " -> Hit: 0x" << std::hex << it->second.frameNumber << std::endl;
-      #endif
+      debug_log("TLB", "Hit: 0x" << std::hex << it->second.frameNumber);
     } else {
       // No matching physical frame found -> Miss
       found.write(false);
 
-      #ifdef DEBUG
-      std::cout << " -> Miss" << std::endl;
-      #endif
+      debug_log("TLB", "Miss");
     }
 
     wait();

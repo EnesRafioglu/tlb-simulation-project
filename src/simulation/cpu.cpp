@@ -1,5 +1,7 @@
 #include "cpu.hpp"
 
+#include "logging.hpp"
+
 CPU::CPU(
   sc_module_name name,
   MMU* mmu,
@@ -34,10 +36,12 @@ void CPU::cpuOperation() {
     // Get the current request
     Request* const request = &requests[requestIndex];
 
-    #ifdef DEBUG
-    std::cout << std::string(25, '+') << std::endl;
-    std::cout << "CPU: Processing request " << requestIndex << " with address 0x" << std::hex << request->addr << " and data 0x" << request->data << std::endl;
-    #endif
+    debug_log(std::string(25, '+'));
+    debug_log(
+      "CPU",
+      "Processing request " << requestIndex << " with address 0x" << std::hex << request->addr << " and data 0x" << request->data
+    );
+
 
     // Send the request to the MMU
     address.write(request->addr);
@@ -51,14 +55,13 @@ void CPU::cpuOperation() {
     if (request->we == false) {
       request->data = dataOut.read().to_uint();
 
-      #ifdef DEBUG
-      std::cout << "CPU: Received data 0x" << std::hex << request->data << std::endl;
-      #endif
+      debug_log(
+        "CPU",
+        "Received data 0x" << std::hex << request->data
+      );
     }
 
-    #ifdef DEBUG
-    std::cout << std::string(25, '-') << std::endl;
-    #endif
+    debug_log(std::string(25, '+'));
 
     ++requestIndex;
     wait();
