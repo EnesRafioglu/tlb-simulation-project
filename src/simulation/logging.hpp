@@ -10,7 +10,7 @@
 #include <ctime>
 #include <iomanip>
 
-#define _debug_log_impl(message) {                                                                \
+#define _debug_log_impl(message) {                                                               \
   const time_t current_time = std::time(nullptr);                                               \
   const tm* local_time = std::localtime(&current_time);                                         \
                                                                                                 \
