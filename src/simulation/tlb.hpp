@@ -6,6 +6,7 @@
 #include <systemc>
 
 using namespace sc_core;
+using namespace sc_dt;
 
 /**
  * @brief SystemC module representing the Translation Lookaside Buffer (TLB).
@@ -25,9 +26,9 @@ public:
   sc_in<bool> clk;
 
   /** Page number of the virtual address that should be looked up */
-  sc_in<uint32_t> virtualPageNumber;
+  sc_in<sc_bv<32>> virtualPageNumber;
   /** Possibly found matching physical frame number */
-  sc_out<uint32_t> physicalFrameNumber;
+  sc_out<sc_bv<32>> physicalFrameNumber;
   /** Signal that indicates whether a matching physical frame was found */
   sc_out<bool> found;
 

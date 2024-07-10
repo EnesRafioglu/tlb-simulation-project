@@ -5,6 +5,7 @@
 #include <systemc>
 
 using namespace sc_core;
+using namespace sc_dt;
 
 /**
  * @brief Memory module for storing data.
@@ -23,11 +24,11 @@ public:
   /** Signal that indicates whether the current value of `dateIn` should be persisted */
   sc_in<bool> writeEnabled;
   /** Current address all operations relate to */
-  sc_in<uint32_t> address;
+  sc_in<sc_bv<32>> address;
   /** Data that should potentially be written to memory */
-  sc_in<uint32_t> dataIn;
+  sc_in<sc_bv<32>> dataIn;
   /** Data currently in the memory cell at `address` */
-  sc_out<uint32_t> dataOut;
+  sc_out<sc_bv<32>> dataOut;
 
 private:
   /** @brief Used internally as the memory backend.

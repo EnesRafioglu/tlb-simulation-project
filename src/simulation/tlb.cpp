@@ -45,7 +45,7 @@ void TLB::tlbOperation() {
 
   while (true) {
     // Compute the cache location
-    TLB::CacheLocation location = computeLocation(virtualPageNumber.read());
+    TLB::CacheLocation location = computeLocation(virtualPageNumber.read().to_uint());
 
     auto it = tlbCache.find(location.index);
 

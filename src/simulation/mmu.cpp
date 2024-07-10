@@ -56,7 +56,7 @@ void MMU::mmuOperation() {
 
   while(true) {
     // Read the address from the CPU
-    uint32_t virtualAddress = address.read();
+    uint32_t virtualAddress = address.read().to_uint();
 
     // Extract the virtual page number from the virtual address
     uint32_t virtualPageNumber = takeLeadingNBits(virtualAddress, numPageBits);
@@ -67,7 +67,7 @@ void MMU::mmuOperation() {
 
     // Check if the TLB found the physical frame
     bool found = tlbFound.read();
-    uint32_t physicalFrame = tlbPhysicalFrameNumber.read();
+    uint32_t physicalFrame = tlbPhysicalFrameNumber.read().to_uint();
 
     if (!found) {
       numMisses++;

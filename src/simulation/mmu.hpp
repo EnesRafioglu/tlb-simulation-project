@@ -6,6 +6,7 @@
 #include "memory.hpp"
 
 using namespace sc_core;
+using namespace sc_dt;
 
 /**
  * @brief SystemC module representing the Memory Management Unit (MMU).
@@ -21,27 +22,27 @@ public:
   /** Signal that indicates whether the current value of `dateIn` should be persisted */
   sc_in<bool> writeEnabled;
   /** Current address all operations relate to */
-  sc_in<uint32_t> address;
+  sc_in<sc_bv<32>> address;
   /** Data that should potentially be written to memory */
-  sc_in<uint32_t> dataIn;
+  sc_in<sc_bv<32>> dataIn;
   /** Data currently in the memory cell at `address` */
-  sc_out<uint32_t> dataOut;
+  sc_out<sc_bv<32>> dataOut;
 
   /** Page number of the virtual address that should be looked up */
-  sc_out<uint32_t> tlbVirtualPageNumber;
+  sc_out<sc_bv<32>> tlbVirtualPageNumber;
   /** Possibly found matching physical frame number */
-  sc_in<uint32_t> tlbPhysicalFrameNumber;
+  sc_in<sc_bv<32>> tlbPhysicalFrameNumber;
   /** Signal that indicates whether a matching physical frame was found */
   sc_in<bool> tlbFound;
 
   /** Singnal that indicated whether the memory module should persist the input data */
   sc_out<bool> memWriteEnabled;
   /** Physical address that the memory should use */
-  sc_out<uint32_t> memAddress;
+  sc_out<sc_bv<32>> memAddress;
   /** Data that should be written to memory */
-  sc_out<uint32_t> memDataIn;
+  sc_out<sc_bv<32>> memDataIn;
   /** Data that was read from memory */
-  sc_in<uint32_t> memDataOut;
+  sc_in<sc_bv<32>> memDataOut;
 
   /** Event that signals to the CPU that the current operation is done */
   sc_event mmuDone;
@@ -74,14 +75,14 @@ private:
   //* Signals used for communication between the MMU and the TLB/Memory modules
   // For documentation on the signals, see the corresponding port declarations above
 
-  sc_signal<uint32_t> sigTlbVirtualPageNumber;
-  sc_signal<uint32_t> sigTlbPhysicalFrameNumber;
+  sc_signal<sc_bv<32>> sigTlbVirtualPageNumber;
+  sc_signal<sc_bv<32>> sigTlbPhysicalFrameNumber;
   sc_signal<bool> sigTlbFound;
 
   sc_signal<bool> sigMemWriteEnabled;
-  sc_signal<uint32_t> sigMemAddress;
-  sc_signal<uint32_t> sigMemDataIn;
-  sc_signal<uint32_t> sigMemDataOut;
+  sc_signal<sc_bv<32>> sigMemAddress;
+  sc_signal<sc_bv<32>> sigMemDataIn;
+  sc_signal<sc_bv<32>> sigMemDataOut;
 
 public:
   MMU(

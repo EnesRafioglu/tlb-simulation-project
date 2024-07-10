@@ -49,7 +49,7 @@ void CPU::cpuOperation() {
 
     // If the request was a read, get the data from the MMU
     if (request->we == false) {
-      request->data = dataOut.read();
+      request->data = dataOut.read().to_uint();
 
       #ifdef DEBUG
       std::cout << "CPU: Received data 0x" << std::hex << request->data << std::endl;

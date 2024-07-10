@@ -13,12 +13,14 @@ void Memory::memoryOperation() {
   while (true) {
     wait();
 
+    const uint32_t addressValue = address.read().to_uint();
+
     // Write to memory on positive edge and write enabled
     if (clk.posedge() && writeEnabled) {
-      memory[address] = dataIn;
+      memory[addressValue] = dataIn.read().to_uint();
     }
 
     // Read from memory and set dataOut to the value stored at address
-    dataOut = memory[address];
+    dataOut = memory[addressValue];
   }
 }

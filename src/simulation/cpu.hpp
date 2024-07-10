@@ -6,6 +6,7 @@
 #include "../shared_types.h"
 
 using namespace sc_core;
+using namespace sc_dt;
 
 /**
  * @brief CPU module for simulating a CPU.
@@ -22,11 +23,11 @@ public:
   /** Signal that indicates whether the current value of `dateIn` should be persisted */
   sc_out<bool> writeEnabled;
   /** Current virtual address all operations relate to */
-  sc_out<uint32_t> address;
+  sc_out<sc_bv<32>> address;
   /** Data that should potentially be written to memory */
-  sc_out<uint32_t> dataIn;
+  sc_out<sc_bv<32>> dataIn;
   /** Data currently in the memory cell at `address` */
-  sc_in<uint32_t> dataOut;
+  sc_in<sc_bv<32>> dataOut;
 
 private:
   /** Memory-Management-Unit used by the CPU to handle it's requests */
@@ -43,9 +44,9 @@ private:
   // For documentation on the signals, see the corresponding port declarations above
 
   sc_signal<bool> sigWriteEnabled;
-  sc_signal<uint32_t> sigAddress;
-  sc_signal<uint32_t> sigDataIn;
-  sc_signal<uint32_t> sigDataOut;
+  sc_signal<sc_bv<32>> sigAddress;
+  sc_signal<sc_bv<32>> sigDataIn;
+  sc_signal<sc_bv<32>> sigDataOut;
 
 public:
   CPU(sc_module_name name, MMU* mmu, unsigned int numRequests, Request requests[]);
