@@ -1,3 +1,5 @@
+#include "main.h"
+
 #include <limits.h>
 #include <stdio.h>
 
@@ -39,15 +41,7 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
-/**
- * Checks the architecture compatibility of the system.
- *
- * This function checks if the architecture meets the requirements for the
- * program to run. It verifies that the size of a byte is 8 bits and the size of
- * an int is 32 bits.
- *
- * @return 0 if the architecture is supported, 1 otherwise.
- */
+
 int check_architecture() {
   // Check if the size of a byte is 8 bits
   if (CHAR_BIT != 8) {
