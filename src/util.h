@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 /**
  * @brief Enumeration representing the possible parse results.
  *
@@ -32,7 +34,7 @@ enum PARSE_RESULT {
  * @param value A pointer to the integer where the result will be stored.
  * @return The result of the parsing operation.
  */
-enum PARSE_RESULT parse_string_to_int(char* str, int* value);
+enum PARSE_RESULT parse_string_to_int(const char* str, int* value);
 
 /**
  * @brief Parses a string to an unsigned integer.
@@ -49,4 +51,16 @@ enum PARSE_RESULT parse_string_to_int(char* str, int* value);
  * stored.
  * @return The result of the parsing operation.
  */
-enum PARSE_RESULT parse_string_to_uint(char* str, unsigned int* value);
+enum PARSE_RESULT parse_string_to_uint(const char* str, unsigned int* value);
+
+/**
+ * Parses a string into an unsigned 32-bit integer.
+ *
+ * This function takes a string `str` and attempts to parse it into an unsigned 32-bit integer.
+ * If the parsing is successful, the resulting value is stored in the `value` parameter.
+ *
+ * @param str The string to be parsed.
+ * @param value A pointer to an unsigned 32-bit integer where the parsed value will be stored.
+ * @return The result of the parsing operation.
+ */
+enum PARSE_RESULT parse_string_to_uint32(const char* str, uint32_t* value);
