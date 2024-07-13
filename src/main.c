@@ -8,7 +8,7 @@
 #include "csv.h"
 #include "simulation/simulation.hpp"
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   // Check if the architecture is supported
   if (check_architecture() != 0) {
     return 1;
@@ -26,23 +26,35 @@ int main(int argc, char *argv[]) {
     printf("Error: Couldn't parse input file %s\n", cnf.inputFile);
     return 1;
   }
-  
+
   for (int i = 0; i < line_count; i++) {
     struct Request req;
     req = requests[i];
 
-    printf("Request %d: addr=%u, data=%u, we=%d\n", i, req.addr, req.data, req.we);
+    printf("Request %d: addr=%u, data=%u, we=%d\n", i, req.addr, req.data,
+           req.we);
   }
-  
-  struct Result result = run_simulation(
-      cnf.cycles, cnf.tlbSize, cnf.tlbLatency, cnf.blocksize,
-      cnf.v2bBlockOffset, cnf.memoryLatency, line_count, sampleRequests, cnf.traceFile);
 
-  printf("Read request returned value: %d (should be 17)\n",
-         sampleRequests[3].data);
+  struct Result result =
+      run_simulation(cnf.cycles, cnf.tlbSize, cnf.tlbLatency, cnf.blocksize,
+                     cnf.v2bBlockOffset, cnf.memoryLatency, line_count,
+                     requests, cnf.traceFile);
+
   printf("Simulation took %zu cycles\n", result.cycles);
   printf("Simulation had %zu misses\n", result.misses);
   printf("Simulation had %zu hits\n", result.hits);
+  printf("Primitive gate count: %zu\n", result.primitiveGateCount);
+
+  printf("Read requests:\n");
+  for (int i = 0; i < line_count; i++) {
+    struct Request req;
+    req = requests[i];
+
+    if (req.we == 0) {
+      printf("Request %d: addr=%u, data=%u, we=%d\n", i, req.addr, req.data,
+             req.we);
+    }
+  }
 
   free(requests);
 

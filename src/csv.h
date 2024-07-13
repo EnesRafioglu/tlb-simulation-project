@@ -2,18 +2,7 @@
 
 #include <stdint.h>
 
-/**
- * @struct Request
- * @brief Represents the request to be processed by the simulation.
- *
- * This struct contains the address to be accessed, the data to be written
- * or the data that was read, and the write enable flag.
- */
-struct Request {
-    uint32_t addr;
-    uint32_t data;
-    int we;
-};
+#include "shared_types.h"
 
 
 /**
