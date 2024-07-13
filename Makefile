@@ -1,9 +1,9 @@
 #* Find source and header files in the current directory and its subdirectories
-SOURCES_C    := $(shell find * -name '*.c')
-SOURCES_CPP  := $(shell find * -name '*.cpp')
+SOURCES_C    := $(shell find src -name '*.c')
+SOURCES_CPP  := $(shell find src -name '*.cpp')
 
-HEADERS_C    := $(shell find * -name '*.h')
-HEADERS_CPP  := $(shell find * -name '*.hpp')
+HEADERS_C    := $(shell find src -name '*.h')
+HEADERS_CPP  := $(shell find src -name '*.hpp')
 
 OBJECTS_C    := $(addprefix build/,$(SOURCES_C:.c=.o))
 OBJECTS_CPP  := $(addprefix build/,$(SOURCES_CPP:.cpp=.o))
