@@ -2,8 +2,8 @@
 
 #include <cmath>
 
-#include "util.hpp"
-#include "logging.hpp"
+#include "src/simulation/util.hpp"
+#include "src/simulation/logging.hpp"
 
 TLB::TLB(
   sc_module_name name,
