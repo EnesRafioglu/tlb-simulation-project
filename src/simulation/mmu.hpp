@@ -2,7 +2,7 @@
 
 #include <systemc>
 
-#include "tlb.hpp"
+#include "oldTLB/tlb.hpp"
 #include "memory.hpp"
 
 using namespace sc_core;

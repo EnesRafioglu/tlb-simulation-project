@@ -3,7 +3,7 @@
 
 #include "simulation.hpp"
 
-#include "tlb.hpp"
+#include "oldTLB/tlb.hpp"
 #include "memory.hpp"
 #include "mmu.hpp"
 #include "cpu.hpp"
