@@ -284,3 +284,139 @@ TEST(ParseStringToUnsignedIntTest, OutOfRangeDown) {
   unsigned int value;
   EXPECT_EQ(parse_string_to_uint(input, &value), PARSE_OUT_OF_RANGE);
 }
+
+//* parse_string_to_uint32
+
+TEST(ParseStringToUnsignedInt32Test, BasicDecimal) {
+  const char* input = "123";
+  uint32_t value;
+  EXPECT_EQ(parse_string_to_uint32(input, &value), PARSE_SUCCESS);
+  EXPECT_EQ(value, 123);
+}
+
+TEST(ParseStringToUnsignedInt32Test, BasicHex) {
+  const char* input = "0x7b";
+  uint32_t value;
+  EXPECT_EQ(parse_string_to_uint32(input, &value), PARSE_SUCCESS);
+  EXPECT_EQ(value, 123);
+}
+
+TEST(ParseStringToUnsignedInt32Test, BasicOctal) {
+  const char* input = "0173";
+  uint32_t value;
+  EXPECT_EQ(parse_string_to_uint32(input, &value), PARSE_SUCCESS);
+  EXPECT_EQ(value, 123);
+}
+
+TEST(ParseStringToUnsignedInt32Test, NegativeDecimal) {
+  const char* input = "-123";
+  uint32_t value;
+  EXPECT_EQ(parse_string_to_uint32(input, &value), PARSE_OUT_OF_RANGE);
+}
+
+TEST(ParseStringToUnsignedInt32Test, NegativeHex) {
+  const char* input = "-0x7b";
+  uint32_t value;
+  EXPECT_EQ(parse_string_to_uint32(input, &value), PARSE_OUT_OF_RANGE);
+}
+
+TEST(ParseStringToUnsignedInt32Test, NegativeOctal) {
+  const char* input = "-0173";
+  uint32_t value;
+  EXPECT_EQ(parse_string_to_uint32(input, &value), PARSE_OUT_OF_RANGE);
+}
+
+TEST(ParseStringToUnsignedInt32Test, Zero) {
+  const char* input = "0";
+  uint32_t value;
+  EXPECT_EQ(parse_string_to_uint32(input, &value), PARSE_SUCCESS);
+  EXPECT_EQ(value, 0);
+}
+
+TEST(ParseStringToUnsignedInt32Test, LeadingZerosHex) {
+  const char* input = "0x007b";
+  uint32_t value;
+  EXPECT_EQ(parse_string_to_uint32(input, &value), PARSE_SUCCESS);
+  EXPECT_EQ(value, 123);
+}
+
+TEST(ParseStringToUnsignedInt32Test, LeadingZerosOctal) {
+  const char* input = "0000173";
+  uint32_t value;
+  EXPECT_EQ(parse_string_to_uint32(input, &value), PARSE_SUCCESS);
+  EXPECT_EQ(value, 123);
+}
+
+TEST(ParseStringToUnsignedInt32Test, LeadingZerosNegativeHex) {
+  const char* input = "-0x007b";
+  uint32_t value;
+  EXPECT_EQ(parse_string_to_uint32(input, &value), PARSE_OUT_OF_RANGE);
+}
+
+TEST(ParseStringToUnsignedInt32Test, LeadingZerosNegativeOctal) {
+  const char* input = "-0000173";
+  uint32_t value;
+  EXPECT_EQ(parse_string_to_uint32(input, &value), PARSE_OUT_OF_RANGE);
+}
+
+TEST(ParseStringToUnsignedInt32Test, JustInRangeUp) {
+  std::string str = std::to_string(std::numeric_limits<uint32_t>::max());
+  const char* input = str.c_str();
+  uint32_t value;
+  EXPECT_EQ(parse_string_to_uint32(input, &value), PARSE_SUCCESS);
+  EXPECT_EQ(value, std::numeric_limits<uint32_t>::max());
+}
+
+TEST(ParseStringToUnsignedInt32Test, JustInRangeDown) {
+  std::string str = std::to_string(std::numeric_limits<uint32_t>::min());
+  const char* input = str.c_str();
+  uint32_t value;
+  EXPECT_EQ(parse_string_to_uint32(input, &value), PARSE_SUCCESS);
+  EXPECT_EQ(value, std::numeric_limits<uint32_t>::min());
+}
+
+// TODO: Add tests for in range hex and octal
+
+TEST(ParseStringToUnsignedInt32Test, CharacterAfterNumberDecimal) {
+  const char* input = "123x";
+  uint32_t value;
+  EXPECT_EQ(parse_string_to_uint32(input, &value), PARSE_CHARACTERS_LEFT);
+}
+
+TEST(ParseStringToUnsignedInt32Test, CharacterAfterNumberHex) {
+  const char* input = "0x7bx";
+  uint32_t value;
+  EXPECT_EQ(parse_string_to_uint32(input, &value), PARSE_CHARACTERS_LEFT);
+}
+
+TEST(ParseStringToUnsignedInt32Test, CharacterAfterNumberOctal) {
+  const char* input = "0173x";
+  uint32_t value;
+  EXPECT_EQ(parse_string_to_uint32(input, &value), PARSE_CHARACTERS_LEFT);
+}
+
+TEST(ParseStringToUnsignedInt32Test, EmptyString) {
+  const char* input = "";
+  uint32_t value;
+  EXPECT_EQ(parse_string_to_uint32(input, &value), PARSE_NO_DIGITS);
+}
+
+TEST(ParseStringToUnsignedInt32Test, NoDigits) {
+  const char* input = "abc";
+  uint32_t value;
+  EXPECT_EQ(parse_string_to_uint32(input, &value), PARSE_NO_DIGITS);
+}
+
+TEST(ParseStringToUnsignedInt32Test, OutOfRangeUp) {
+  std::string str = std::to_string((unsigned long long)(std::numeric_limits<uint32_t>::max()) + 1);
+  const char* input = str.c_str();
+  uint32_t value;
+  EXPECT_EQ(parse_string_to_uint32(input, &value), PARSE_OUT_OF_RANGE);
+}
+
+TEST(ParseStringToUnsignedInt32Test, OutOfRangeDown) {
+  std::string str = std::to_string((unsigned long long)(std::numeric_limits<uint32_t>::min()) - 1);
+  const char* input = str.c_str();
+  uint32_t value;
+  EXPECT_EQ(parse_string_to_uint32(input, &value), PARSE_OUT_OF_RANGE);
+}

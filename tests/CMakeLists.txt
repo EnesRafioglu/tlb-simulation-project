@@ -86,6 +86,7 @@ target_compile_definitions(
   c_tests
   PRIVATE
   IS_TESTING
+  LANG_C
 )
 
 add_executable(
@@ -107,6 +108,7 @@ target_compile_definitions(
   cpp_tests
   PRIVATE
   IS_TESTING
+  LANG_CPP
 )
 
 include(GoogleTest)
