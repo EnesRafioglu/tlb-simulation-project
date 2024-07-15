@@ -92,3 +92,8 @@ enum PARSE_RESULT parse_string_to_uint(const char* str, unsigned int* value) {
 enum PARSE_RESULT parse_string_to_uint32(const char* str, uint32_t* value) {
   return parse_string_to_number(str, value, PARSE_STRING_TO_NUMBER_TYPE_UINT32);
 }
+
+int is_power_of_two(unsigned int x) {
+  // A number is a power of two if it has exactly one bit set
+  return x && !(x & (x - 1));
+}

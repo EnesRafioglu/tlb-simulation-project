@@ -420,3 +420,35 @@ TEST(ParseStringToUnsignedInt32Test, OutOfRangeDown) {
   uint32_t value;
   EXPECT_EQ(parse_string_to_uint32(input, &value), PARSE_OUT_OF_RANGE);
 }
+
+//* is_power_of_two
+
+TEST(IsPowerOfTwoTest, Zero) {
+  EXPECT_EQ(is_power_of_two(0), 0);
+}
+
+TEST(IsPowerOfTwoTest, One) {
+  EXPECT_EQ(is_power_of_two(1), 1);
+}
+
+TEST(IsPowerOfTwoTest, IsPowerOfTwo) {
+  for (int i = 0; i < 32; i++) {
+    EXPECT_EQ(is_power_of_two(1 << i), 1);
+  }
+}
+
+TEST(IsPowerOfTwoTest, NotAPowerOfTwo) {
+  EXPECT_EQ(is_power_of_two(3), 0);
+  EXPECT_EQ(is_power_of_two(5), 0);
+  EXPECT_EQ(is_power_of_two(6), 0);
+  EXPECT_EQ(is_power_of_two(7), 0);
+  EXPECT_EQ(is_power_of_two(9), 0);
+  EXPECT_EQ(is_power_of_two(10), 0);
+  EXPECT_EQ(is_power_of_two(11), 0);
+
+  for (int i = 3; i < 32; i++) {
+    uint32_t powerOfTwo = 1 << i;
+    EXPECT_EQ(is_power_of_two(powerOfTwo-1), 0);
+    EXPECT_EQ(is_power_of_two(powerOfTwo+1), 0);
+  }
+}

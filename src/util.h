@@ -69,3 +69,11 @@ enum PARSE_RESULT parse_string_to_uint(const char* str, unsigned int* value);
  * @return The result of the parsing operation.
  */
 enum PARSE_RESULT parse_string_to_uint32(const char* str, uint32_t* value);
+
+/**
+ * Checks if a given number is a power of two.
+ *
+ * @param x The number to check.
+ * @return 1 if the number is a power of two, 0 otherwise.
+ */
+int is_power_of_two(unsigned int x);
