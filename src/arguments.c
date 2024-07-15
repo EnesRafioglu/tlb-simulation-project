@@ -201,20 +201,19 @@ bool maybe_print_requires_value(int opt) {
 }
 
 void print_usage() {
-  printf("Usage: ./tla [OPTIONS] INPUT_FILE\n");
-  printf("Options:\n");
-  printf("  --cycles=<int>\t\tNumber of cycles to simulate\n");
-  printf("  --blocksize=<unsigned>\tSize of a memory block in bytes\n");
   printf(
+      "Usage: ./tlb [OPTIONS] INPUT_FILE\n"
+      "Options:\n"
+      "  --cycles=<int>\t\tNumber of cycles to simulate\n"
+      "  --blocksize=<unsigned>\tSize of a memory block in bytes\n"
       "  --v2b-block-offset=<unsigned>\tOffset used to \"translate\" virtual "
-      "addresses to physical ones\n");
-  printf("  --tlb-size=<unsigned>\t\tNumber of entries in the TLB\n");
-  printf("  --tlb-latency=<unsigned>\tThe latency of the TLB in cycles\n");
-  printf(
+      "addresses to physical ones\n"
+      "  --tlb-size=<unsigned>\t\tNumber of entries in the TLB\n"
+      "  --tlb-latency=<unsigned>\tThe latency of the TLB in cycles\n"
       "  --memory-latency=<unsigned>\tThe latency of the main memory in "
-      "cycles\n");
-  printf("  --tf=<path>\t\t\tOutput path for a trace file with all signals\n");
-  printf("  --help\t\t\tPrint this help message\n");
+      "cycles\n"
+      "  --tf=<path>\t\t\tOutput path for a trace file with all signals\n"
+      "  --help\t\t\tPrint this help message\n");
 }
 
 /**

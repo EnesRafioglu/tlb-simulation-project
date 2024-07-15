@@ -4,6 +4,37 @@ extern "C" {
   #include "arguments.h"
 }
 
+//? print_usage
+
+TEST(PrintUsageTest, Output) {
+  // Capture stdout and stderr
+  testing::internal::CaptureStdout();
+  testing::internal::CaptureStderr();
+
+  print_usage();
+
+  // Check output
+  std::string output = testing::internal::GetCapturedStdout();
+  std::string error = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(
+    output,
+    "Usage: ./tlb [OPTIONS] INPUT_FILE\n"
+    "Options:\n"
+    "  --cycles=<int>\t\tNumber of cycles to simulate\n"
+    "  --blocksize=<unsigned>\tSize of a memory block in bytes\n"
+    "  --v2b-block-offset=<unsigned>\tOffset used to \"translate\" virtual addresses to physical ones\n"
+    "  --tlb-size=<unsigned>\t\tNumber of entries in the TLB\n"
+    "  --tlb-latency=<unsigned>\tThe latency of the TLB in cycles\n"
+    "  --memory-latency=<unsigned>\tThe latency of the main memory in cycles\n"
+    "  --tf=<path>\t\t\tOutput path for a trace file with all signals\n"
+    "  --help\t\t\tPrint this help message\n"
+  );
+  EXPECT_EQ(error, "");
+
+}
+
+//? parse_arguments
+
 // Test fixture for parse_arguments
 class ParseArgumentsTest : public ::testing::Test {
   protected:
