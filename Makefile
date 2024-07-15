@@ -13,7 +13,7 @@ SRC_DIRS     := $(shell find src -type d)
 SYSTEMC_PATH := ../systemc
 
 BUILD_DIR    := build
-OUTPUT       := tla
+OUTPUT       := tlb
 
 
 #* Define the compiler and flags
