@@ -14,6 +14,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  // Parse the command line arguments
   struct Configuration cnf;
   switch (parse_arguments(argc, argv, &cnf)) {
     case PARSE_ARG_RESULT_ERROR:
@@ -30,6 +31,7 @@ int main(int argc, char* argv[]) {
       break;
   }
 
+  // Parse the input file
   int line_count;
   struct Request* requests;
   requests = parse_csv(cnf.inputFile, &line_count);
@@ -48,11 +50,13 @@ int main(int argc, char* argv[]) {
            req.we);
   }
 
+  // Run the simulation
   struct Result result =
       run_simulation(cnf.cycles, cnf.tlbSize, cnf.tlbLatency, cnf.blocksize,
                      cnf.v2bBlockOffset, cnf.memoryLatency, line_count,
                      requests, cnf.traceFile);
 
+  // Print the results
   printf("Simulation took %zu cycles\n", result.cycles);
   printf("Simulation had %zu misses\n", result.misses);
   printf("Simulation had %zu hits\n", result.hits);
@@ -69,6 +73,7 @@ int main(int argc, char* argv[]) {
     }
   }
 
+  // Clean up
   free(requests);
 
   return 0;
