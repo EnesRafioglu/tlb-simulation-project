@@ -269,7 +269,8 @@ void validate_and_extract_number(char* argName, char* str, void* value,
   }
 
   // Check if the value is greater than or equal to the minimum
-  if (*(int*)value < min) {
+  if ((isSigned && *(int*)value < min) ||
+      (!isSigned && *(unsigned int*)value < min)) {
     fprintf(stderr, "Error: %s must be greater than or equal to %d\n\n",
             argName, min);
     return 1;
