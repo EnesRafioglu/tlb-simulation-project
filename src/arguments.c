@@ -7,6 +7,19 @@
 
 #include "util.h"
 
+/**
+ * Macro to check the result of an expression and return PARSE_ARG_RESULT_ERROR
+ * if the expression is not equal to 0.
+ *
+ * @param expr The expression to be evaluated.
+ * @return PARSE_ARG_RESULT_ERROR if the expression is not equal to 0, otherwise
+ * _nothing_.
+ */
+#define RETURNS_0_OR_ARG_PARSE_ERROR(expr) \
+  if ((expr) != 0) {                       \
+    return PARSE_ARG_RESULT_ERROR;         \
+  }
+
 // Forward declarations
 
 bool maybe_print_requires_value(int opt);
@@ -54,7 +67,8 @@ static struct option longArguments[] = {
     {"help", no_argument, NULL, OPTION_HELP},
 };
 
-void parse_arguments(int argc, char* argv[], struct Configuration* cnf) {
+enum PARSE_ARG_RESULT parse_arguments(int argc, char* argv[],
+                                      struct Configuration* cnf) {
   // Set sensible defaults
   cnf->cycles = 1000;
   cnf->blocksize = 64;
@@ -73,50 +87,51 @@ void parse_arguments(int argc, char* argv[], struct Configuration* cnf) {
     if ((opt = getopt_long(argc, argv, "c:h", longArguments, NULL)) != -1) {
       switch (opt) {
         case OPTION_CYCLES:
-          validate_and_extract_number("cycles", optarg, &cnf->cycles, true, 1);
+          RETURNS_0_OR_ARG_PARSE_ERROR(validate_and_extract_number(
+              "cycles", optarg, &cnf->cycles, true, 1, false));
           break;
         case OPTION_BLOCKSIZE:
-          validate_and_extract_number("blocksize", optarg, &cnf->blocksize,
-                                      false, 1);
+          RETURNS_0_OR_ARG_PARSE_ERROR(validate_and_extract_number(
+              "blocksize", optarg, &cnf->blocksize, false, 1, true));
           break;
         case OPTION_V2B_BLOCK_OFFSET:
-          validate_and_extract_number("v2b-block-offset", optarg,
-                                      &cnf->v2bBlockOffset, false, 0);
+          RETURNS_0_OR_ARG_PARSE_ERROR(validate_and_extract_number(
+              "v2b-block-offset", optarg, &cnf->v2bBlockOffset, false, 0,
+              false));
           break;
         case OPTION_TLB_SIZE:
-          validate_and_extract_number("tlb-size", optarg, &cnf->tlbSize, false,
-                                      1);
+          RETURNS_0_OR_ARG_PARSE_ERROR(validate_and_extract_number(
+              "tlb-size", optarg, &cnf->tlbSize, false, 1, true));
           break;
         case OPTION_TLB_LATENCY:
-          validate_and_extract_number("tlb-latency", optarg, &cnf->tlbLatency,
-                                      false, 0);
+          RETURNS_0_OR_ARG_PARSE_ERROR(validate_and_extract_number(
+              "tlb-latency", optarg, &cnf->tlbLatency, false, 0, false));
           break;
         case OPTION_MEMORY_LATENCY:
-          validate_and_extract_number("memory-latency", optarg,
-                                      &cnf->memoryLatency, false, 0);
+          RETURNS_0_OR_ARG_PARSE_ERROR(validate_and_extract_number(
+              "memory-latency", optarg, &cnf->memoryLatency, false, 0, false));
           break;
         case OPTION_TRACE_FILE:
           cnf->traceFile = optarg;
           break;
         case OPTION_HELP:
-          print_usage();
-          exit(0);
+          return PARSE_ARG_RESULT_HELP;
         case OPTION_UNKNOWN:
           if (!maybe_print_requires_value(optopt)) {
-            fprintf(stderr, "Error: Invalid option: -%c\n\n", optopt);
+            fprintf(stderr, "Error: Unknown option: -%c\n\n", optopt);
           }
 
-          print_usage();
-          exit(22);
+          return PARSE_ARG_RESULT_ERROR;
         default:
-          exit(22);
+          printf("Unknown option: %c\n", opt);
+          return PARSE_ARG_RESULT_ERROR;
       }
     } else {
       // Check if the input file has already been set
       if (cnf->inputFile != NULL) {
         fprintf(stderr, "Error: Multiple input files specified\n\n");
-        print_usage();
-        exit(22);
+
+        return PARSE_ARG_RESULT_ERROR;
       }
 
       // Set the input file
@@ -163,12 +178,6 @@ bool maybe_print_requires_value(int opt) {
   return true;
 }
 
-/**
- * @brief Prints the usage information for the program.
- *
- * This function prints the usage information for the program, including the
- * available options and their descriptions.
- */
 void print_usage() {
   printf("Usage: ./tla [OPTIONS] INPUT_FILE\n");
   printf("Options:\n");
@@ -193,7 +202,7 @@ void print_usage() {
  * depending on the value of `isSigned`. It then checks if the parsing was
  * successful and if the parsed value is greater than or equal to the minimum
  * value specified by `min`. If any validation fails, an error message is
- * printed and the program exits with a status code of 22.
+ * printed and the function returns `1`.
  *
  * @param argName The name of the argument being validated.
  * @param str The string to parse.
@@ -218,28 +227,24 @@ void validate_and_extract_number(char* argName, char* str, void* value,
     case PARSE_SUCCESS:
       break;
     case PARSE_OUT_OF_RANGE:
-      fprintf(stderr, "Error: %s is out of range\n\n", argName);
-      print_usage();
-      exit(22);
+      return 1;
     case PARSE_NO_DIGITS:
       fprintf(stderr, "Error: %s does not contain any digits\n\n", argName);
-      print_usage();
-      exit(22);
+      return 1;
     case PARSE_CHARACTERS_LEFT:
       fprintf(stderr, "Error: %s contains extra characters\n\n", argName);
-      print_usage();
-      exit(22);
+      return 1;
     case PARSE_GENERAL_ERROR:
       fprintf(stderr, "Error: %s is not a valid number\n\n", argName);
-      print_usage();
-      exit(22);
+      return 1;
   }
 
   // Check if the value is greater than or equal to the minimum
   if (*(int*)value < min) {
     fprintf(stderr, "Error: %s must be greater than or equal to %d\n\n",
             argName, min);
-    print_usage();
-    exit(22);
+    return 1;
   }
+
+  return 0;
 }

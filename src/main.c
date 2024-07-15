@@ -15,7 +15,20 @@ int main(int argc, char* argv[]) {
   }
 
   struct Configuration cnf;
-  parse_arguments(argc, argv, &cnf);
+  switch (parse_arguments(argc, argv, &cnf)) {
+    case PARSE_ARG_RESULT_ERROR:
+      print_usage();
+
+      // 22 is the exit code for invalid arguments
+      return 22;
+    case PARSE_ARG_RESULT_HELP:
+      print_usage();
+
+      // The user only wanted to see the help message -> exit successfully
+      return 0;
+    default:
+      break;
+  }
 
   int line_count;
   struct Request* requests;
