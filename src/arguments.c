@@ -1,6 +1,7 @@
 #include "arguments.h"
 
 #include <getopt.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -248,6 +249,13 @@ void validate_and_extract_number(char* argName, char* str, void* value,
     case PARSE_SUCCESS:
       break;
     case PARSE_OUT_OF_RANGE:
+      if (isSigned) {
+        fprintf(stderr, "Error: %s is out of range for the interval (%d, %d)\n\n",
+                argName, INT_MIN, INT_MAX);
+      } else {
+        fprintf(stderr, "Error: %s is out of range for the interval (%u, %u)\n\n",
+                argName, 0, UINT_MAX);
+      }
       return 1;
     case PARSE_NO_DIGITS:
       fprintf(stderr, "Error: %s does not contain any digits\n\n", argName);
