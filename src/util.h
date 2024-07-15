@@ -27,8 +27,8 @@ enum PARSE_RESULT {
  * This function takes a C-style string as input and attempts to convert it to
  * an integer. Decimals, octals, and hexadecimals are supported. The base is
  * determined by the prefix of the string. If the conversion is successful, the
- * function returns the parsed integer. If the conversion fails, an error
- * message is printed to stderr and the program is aborted.
+ * function returns the parsed integer. If the conversion fails, a corresponding
+ * **PARSE_RESULT** value is returned, indicating the reason for the failure.
  *
  * @param str The C-style string to be parsed.
  * @param value A pointer to the integer where the result will be stored.
@@ -43,8 +43,8 @@ enum PARSE_RESULT parse_string_to_int(const char* str, int* value);
  * an unsigned integer. Decimals, octals, and hexadecimals are supported. The
  * base is determined by the prefix of the string. If the conversion is
  * successful, the function returns the parsed unsigned integer. If the
- * conversion fails, an error message is printed to stderr and the program is
- * aborted.
+ * conversion fails, a corresponding **PARSE_RESULT** value is returned,
+ * indicating the reason for the failure.
  *
  * @param str The C-style string to be parsed.
  * @param value A pointer to the unsigned integer where the result will be
@@ -57,11 +57,11 @@ enum PARSE_RESULT parse_string_to_uint(const char* str, unsigned int* value);
 * @brief Parses a string to an unsigned integer.
  *
  * This function takes a C-style string as input and attempts to convert it to
- * an unsigned 32-bit integer. Decimals, octals, and hexadecimals are supported. The
- * base is determined by the prefix of the string. If the conversion is
+ * an unsigned 32-bit integer. Decimals, octals, and hexadecimals are supported.
+ * The base is determined by the prefix of the string. If the conversion is
  * successful, the function returns the parsed unsigned integer. If the
- * conversion fails, an error message is printed to stderr and the program is
- * aborted.
+ * conversion fails, a corresponding **PARSE_RESULT** value is returned,
+ * indicating the reason for the failure.
  *
  * @param str The C-style string to be parsed.
  * @param value A pointer to the unsigned integer where the result will be
