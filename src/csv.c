@@ -55,7 +55,6 @@ unsigned int count_lines(FILE* file) {
  * Works similarly to strtok, but doesn't skip empty tokens
  * and the delimiter is always a comma.
  *
- *
  * @param str The string to be tokenized.
  * @return A pointer to the first token in the string.
  */
@@ -86,6 +85,62 @@ char* tokenize_string(char* str) {
   }
 
   return token;
+}
+
+/**
+ * Parses a number from a token and stores it in the provided value pointer.
+ * Displays error messages with the provided type and line number if parsing
+ * fails.
+ *
+ * @param token The token containing the number to be parsed.
+ * @param value A pointer to the variable where the parsed number will be
+ * stored.
+ * @param type The type of the number being parsed (for error message display).
+ * @param line_number The line number where the parsing is being performed (for
+ * error message display).
+ * @return Returns 0 if the number was successfully parsed, or a non-zero value
+ * if an error occurred.
+ */
+int parse_number_with_error_messages(const char* token, uint32_t* value,
+                                     const char* type, int line_number) {
+  enum PARSE_RESULT result = parse_string_to_uint32(token, value);
+
+  switch (result) {
+    case PARSE_SUCCESS:
+      return 0;
+    case PARSE_OUT_OF_RANGE:
+      fprintf(stderr,
+              "Error: %s %s is out of range (line: %d)\n\texample inputs: "
+              "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n",
+              type, token, line_number);
+
+      break;
+    case PARSE_NO_DIGITS:
+      fprintf(
+          stderr,
+          "Error: %s %s doesn't contain any digits (line: %d)\n\texample "
+          "inputs: R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n",
+          type, token, line_number);
+
+      break;
+    case PARSE_CHARACTERS_LEFT:
+      fprintf(
+          stderr,
+          "Error: %s %s contains extra characters (line: %d)\n\texample "
+          "inputs: R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n",
+          type, token, line_number);
+
+      break;
+    case PARSE_GENERAL_ERROR:
+      fprintf(stderr,
+              "Error: Couldn't parse %s %s (line: %d)\n\texample inputs: "
+              "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n",
+              type, token, line_number);
+
+      break;
+  }
+
+  return 1;
 }
 
 enum PARSE_CSV_RESULT parse_csv(const char* filename, int* line_count,
@@ -266,115 +321,26 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, int* line_count,
         }
 
       } else if (token_count == 1) {
-        // use parse_string_to_uint to parse the address
-        // and check for errors
+        // parse the address and check for errors
 
-        enum PARSE_RESULT result = parse_string_to_uint32(token, &request.addr);
-
-        switch (result) {
-          case PARSE_SUCCESS:
-            break;
-          case PARSE_OUT_OF_RANGE:
-            fprintf(
-                stderr,
-                "Error: Address %s is out of range (line: %d)\n\texample "
-                "inputs: "
-                "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n",
-                token, *line_count + 1);
-
-            fclose(file);
-            free(parsed_requests);
-            return PARSE_CSV_RESULT_PARSE_ERROR;
-          case PARSE_NO_DIGITS:
-            fprintf(
-                stderr,
-                "Error: Address %s doesn't contain any digits (line: "
-                "%d)\n\texample inputs: "
-                "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n",
-                token, *line_count + 1);
-
-            fclose(file);
-            free(parsed_requests);
-            return PARSE_CSV_RESULT_PARSE_ERROR;
-          case PARSE_CHARACTERS_LEFT:
-            fprintf(
-                stderr,
-                "Error: Address %s contains extra characters (line: "
-                "%d)\n\texample inputs: "
-                "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n",
-                token, *line_count + 1);
-
-            fclose(file);
-            free(parsed_requests);
-            return PARSE_CSV_RESULT_PARSE_ERROR;
-          case PARSE_GENERAL_ERROR:
-            fprintf(
-                stderr,
-                "Error: Couldn't parse address %s (line: %d)\n\texample "
-                "inputs: "
-                "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n",
-                token, *line_count + 1);
-
-            fclose(file);
-            free(parsed_requests);
-            return PARSE_CSV_RESULT_PARSE_ERROR;
+        if (parse_number_with_error_messages(token, &request.addr, "Address",
+                                             *line_count + 1)) {
+          fclose(file);
+          free(parsed_requests);
+          return PARSE_CSV_RESULT_PARSE_ERROR;
         }
 
       } else if (token_count == 2) {
         // check if we is set
         if (request.we == 1) {
-          enum PARSE_RESULT result =
-              parse_string_to_uint32(token, &request.data);
-
-          switch (result) {
-            case PARSE_SUCCESS:
-              break;
-            case PARSE_OUT_OF_RANGE:
-              fprintf(
-                  stderr,
-                  "Error: Value %s is out of range (line: %d)\n\texample "
-                  "inputs: "
-                  "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n",
-                  token, *line_count + 1);
-
-              fclose(file);
-              free(parsed_requests);
-              return PARSE_CSV_RESULT_PARSE_ERROR;
-            case PARSE_NO_DIGITS:
-              fprintf(
-                  stderr,
-                  "Error: Value %s doesn't contain any digits (line: "
-                  "%d)\n\texample inputs: "
-                  "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n",
-                  token, *line_count + 1);
-
-              fclose(file);
-              free(parsed_requests);
-              return PARSE_CSV_RESULT_PARSE_ERROR;
-            case PARSE_CHARACTERS_LEFT:
-              fprintf(
-                  stderr,
-                  "Error: Value %s contains extra characters (line: "
-                  "%d)\n\texample inputs: "
-                  "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n",
-                  token, *line_count + 1);
-
-              fclose(file);
-              free(parsed_requests);
-              return PARSE_CSV_RESULT_PARSE_ERROR;
-            case PARSE_GENERAL_ERROR:
-              fprintf(
-                  stderr,
-                  "Error: Couldn't parse value %s (line: %d)\n\texample "
-                  "inputs: "
-                  "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n",
-                  token, *line_count + 1);
-
-              fclose(file);
-              free(parsed_requests);
-              return PARSE_CSV_RESULT_PARSE_ERROR;
+          // parse the data and check for errors
+          if (parse_number_with_error_messages(token, &request.data, "Data",
+                                               *line_count + 1)) {
+            fclose(file);
+            free(parsed_requests);
+            return PARSE_CSV_RESULT_PARSE_ERROR;
           }
-
+          
         } else {
           fprintf(stderr,
                   "Error: Read type shouldn't have data (line: %d)\n\texample "
