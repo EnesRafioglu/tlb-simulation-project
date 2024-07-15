@@ -9,54 +9,36 @@
 #include "simulation/simulation.hpp"
 
 int main(int argc, char* argv[]) {
-  // Check if the architecture is supported
-  if (check_architecture() != 0) {
-    return 1;
-  }
+  struct Request requests[] = {
+    {11111111, 0, 0},
+    {22222222, 0, 0},
+    {33333333, 0, 0},
+    {11111111, 0, 0},
+    {44444444, 0, 0},
+    {33333333, 0, 0},
+    {55555555, 0, 0},
+    {66666666, 0, 0},
+    {11111111, 0, 0},
+    {77777777, 0, 0},
+    {88888888, 0, 0},
+    {99999999, 0, 0},
+    {11111111, 0, 0},
+    {22222222, 0, 0},
+    {33333333, 0, 0},
+    {44444444, 0, 0},
+    {55555555, 0, 0},
+    {11111111, 0, 0},
+    {66666666, 0, 0},
+    {11111111, 0, 0},
+    {77777777, 0, 0}
+  };
 
-  struct Configuration cnf;
-  parse_arguments(argc, argv, &cnf);
+  int maxCycles = 1000000;
 
-  int line_count;
-  struct Request* requests;
-  requests = parse_csv(cnf.inputFile, &line_count);
+  struct Result result = run_simulation(maxCycles,16,2,4096,12,100,sizeof(requests) / sizeof(requests[0]) ,requests,0);
+  printf("%d\n%d\n%d\n%d\n", result.cycles, result.hits, result.misses, result.primitiveGateCount);
 
-  printf("Number of requests: %u\n", line_count);
-  if (requests == NULL) {
-    printf("Error: Couldn't parse input file %s\n", cnf.inputFile);
-    return 1;
-  }
 
-  for (int i = 0; i < line_count; i++) {
-    struct Request req;
-    req = requests[i];
-
-    printf("Request %d: addr=%u, data=%u, we=%d\n", i, req.addr, req.data,
-           req.we);
-  }
-
-  struct Result result =
-      run_simulation(cnf.cycles, cnf.tlbSize, cnf.tlbLatency, cnf.blocksize,
-                     cnf.v2bBlockOffset, cnf.memoryLatency, line_count,
-                     requests, cnf.traceFile);
-
-  printf("Simulation took %zu cycles\n", result.cycles);
-  printf("Simulation had %zu misses\n", result.misses);
-  printf("Simulation had %zu hits\n", result.hits);
-  printf("Primitive gate count: %zu\n", result.primitiveGateCount);
-
-  printf("Read requests:\n");
-  for (int i = 0; i < line_count; i++) {
-    struct Request req;
-    req = requests[i];
-
-    if (req.we == 0) {
-      printf("Request %d: addr=%u, data=%u, we=%d\n", i, req.addr, req.data,
-             req.we);
-    }
-  }
-
-  free(requests);
 
   return 0;
 }

@@ -3,7 +3,7 @@
 
 #include "simulation.hpp"
 
-#include "oldTLB/tlb.hpp"
+#include "newtlb.hpp"
 #include "memory.hpp"
 #include "mmu.hpp"
 #include "cpu.hpp"
@@ -69,7 +69,8 @@ extern "C" Result run_simulation(
 
   //* Create SystemC modules
   // Create the TLB
-  TLB tlb("tlb", tlbSize, blocksize);
+  CACHELINES cache("cache",tlbSize);
+  NEWTLB tlb("tlb", &cache);
 
   // Create the Memory
   Memory memory("memory");
@@ -82,7 +83,6 @@ extern "C" Result run_simulation(
 
   //* Wire up the SystemC modules
   sc_clock clk("clk", sc_time(1, SC_NS));
-  tlb.clk(clk);
   memory.clk(clk);
   cpu.clk(clk);
 

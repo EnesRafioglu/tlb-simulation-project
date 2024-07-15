@@ -2,8 +2,9 @@
 
 #include <systemc>
 
-#include "oldTLB/tlb.hpp"
+#include "cachelines.hpp"
 #include "memory.hpp"
+#include "newtlb.hpp"
 
 using namespace sc_core;
 using namespace sc_dt;
@@ -49,7 +50,7 @@ public:
 
 private:
   /** Translation Lookaside Buffer used by the MMU */
-  TLB* tlb;
+  NEWTLB* tlb;
 
   /** Offset for virtual to block address translation */
   unsigned int v2bBlockOffset;
@@ -87,7 +88,7 @@ private:
 public:
   MMU(
     sc_module_name name,
-    TLB* tlb,
+    NEWTLB* tlb,
     Memory* memory,
     unsigned int blocksize,
     unsigned int v2bBlockOffset,
