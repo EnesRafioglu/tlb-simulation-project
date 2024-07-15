@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 
 /**
  * @brief Enumeration defining the types of number parsing from string.
@@ -96,4 +97,21 @@ enum PARSE_RESULT parse_string_to_uint32(const char* str, uint32_t* value) {
 int is_power_of_two(unsigned int x) {
   // A number is a power of two if it has exactly one bit set
   return x && !(x & (x - 1));
+}
+
+// This function is quite trivial and seems to be the default implementation of
+// a suffix check. To avoid any potential plagiarism, I will leave the following
+// link to a StackOverflow answer that provides a similar implementation I found
+// after writing this function:
+// https://stackoverflow.com/a/744822/8700131
+//
+// An alternative implementation would be to use the `strrstr` function.
+int has_suffix(const char* str, const char* suffix) {
+  size_t str_len = strlen(str);
+  size_t suffix_len = strlen(suffix);
+
+  if (str_len < suffix_len) return 0;
+
+  const char* str_possibly_suffix = str + str_len - suffix_len;
+  return !strncmp(str_possibly_suffix, suffix, suffix_len);
 }

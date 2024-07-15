@@ -452,3 +452,47 @@ TEST(IsPowerOfTwoTest, NotAPowerOfTwo) {
     EXPECT_EQ(is_power_of_two(powerOfTwo+1), 0);
   }
 }
+
+//* has_suffix
+
+TEST(HasSuffixTest, Basic) {
+  const char* str = "hello.txt";
+  const char* suffix = ".txt";
+  EXPECT_EQ(has_suffix(str, suffix), 1);
+}
+
+TEST(HasSuffixTest, NoSuffix) {
+  const char* str = "hello.txt";
+  const char* suffix = ".csv";
+  EXPECT_EQ(has_suffix(str, suffix), 0);
+}
+
+TEST(HasSuffixTest, EmptySuffix) {
+  const char* str = "hello.txt";
+  const char* suffix = "";
+  EXPECT_EQ(has_suffix(str, suffix), 1);
+}
+
+TEST(HasSuffixTest, EmptyString) {
+  const char* str = "";
+  const char* suffix = ".txt";
+  EXPECT_EQ(has_suffix(str, suffix), 0);
+}
+
+TEST(HasSuffixTest, EmptyStringAndSuffix) {
+  const char* str = "";
+  const char* suffix = "";
+  EXPECT_EQ(has_suffix(str, suffix), 1);
+}
+
+TEST(HasSuffixTest, StringToShort) {
+  const char* str = "a";
+  const char* suffix = ".txt";
+  EXPECT_EQ(has_suffix(str, suffix), 0);
+}
+
+TEST(HasSuffixTest, Equal) {
+  const char* str = ".txt";
+  const char* suffix = ".txt";
+  EXPECT_EQ(has_suffix(str, suffix), 1);
+}

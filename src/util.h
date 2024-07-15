@@ -54,7 +54,7 @@ enum PARSE_RESULT parse_string_to_int(const char* str, int* value);
 enum PARSE_RESULT parse_string_to_uint(const char* str, unsigned int* value);
 
 /**
-* @brief Parses a string to an unsigned integer.
+ * @brief Parses a string to an unsigned integer.
  *
  * This function takes a C-style string as input and attempts to convert it to
  * an unsigned 32-bit integer. Decimals, octals, and hexadecimals are supported.
@@ -77,3 +77,15 @@ enum PARSE_RESULT parse_string_to_uint32(const char* str, uint32_t* value);
  * @return 1 if the number is a power of two, 0 otherwise.
  */
 int is_power_of_two(unsigned int x);
+
+/**
+ * Checks if a string has a specific suffix.
+ *
+ * This function takes two parameters: `str` and `suffix`. It checks if the
+ * string `str` ends with the suffix `suffix`.
+ *
+ * @param str The string to check.
+ * @param suffix The suffix to compare against.
+ * @return 1 if the string has the specified suffix, 0 otherwise.
+ */
+int has_suffix(const char* str, const char* suffix);
