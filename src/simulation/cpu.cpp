@@ -45,8 +45,6 @@ void CPU::cpuOperation() {
       "Processing request " << requestIndex << " with address 0x" << std::hex << request->addr << " and data 0x" << request->data
     );
 
-
-
     // Send the request to the MMU
     address.write(request->addr);
     dataIn.write(request->data);
@@ -65,7 +63,6 @@ void CPU::cpuOperation() {
         "CPU",
         "Received data 0x" << std::hex << request->data
       );
-
     }
 
     debug_log(std::string(25, '+'));

@@ -4,43 +4,30 @@
 
 using namespace sc_core;
 using namespace sc_dt;
-using namespace std;
 
 /**
- * @brief Module that represents a register.
+ * @brief SystemC module representing a register.
  *
+ * A register is a unit of data storage in a computer. It consists of a data input and a data output.
+ * This module contains input and output ports for the data, as well as a write enable signal.
  */
+SC_MODULE(REGISTER) {
+public:
+  SC_HAS_PROCESS(REGISTER);
 
-SC_MODULE(REGISTER){
- public:
+  /** Input port for the data to be written to the register. */
+  sc_in<sc_bv<32>>  d;
 
- SC_HAS_PROCESS(REGISTER);
- /**
-  * @brief Input port for the data to be written to the register.
-  */
- sc_in<sc_bv<32>>  d;
+  /** Input port for the write enable signal. */
+  sc_in<bool> we;
 
- /**
-  * @brief Input port for the write enable signal.
-  */
- sc_in<bool> we;
+  /** Output port for the data stored in the register. */
+  sc_out<sc_bv<32>> q;
 
- /**
-  * @brief Output port for the data stored in the register.
-  */
- sc_out<sc_bv<32>> q;
+public:
+  REGISTER(sc_module_name name);
 
-
- REGISTER(sc_module_name name);
-
- private:
- /**
-  * @brief Thread process that updates the register value.
-  *
-  */
- void update();
+private:
+  /** Thread process that updates the register value. */
+  void update();
 };
-
-
-
-

@@ -48,15 +48,12 @@ public:
   /** Port that alerts the mmu whenever the next request is available */
   sc_in<bool> nextRequest;
 
-    /** These signals wont be used.
-      * They are required because we have to bind each port
-      */
-    sc_signal<sc_bv<32>> fout;
-    sc_signal<bool> weout;
+  //? These signals wont be used, but are required because we have to bind each port
+  sc_signal<sc_bv<32>> fout;
+  sc_signal<bool> weout;
 
   /** Event that signals to the CPU that the current operation is done */
   sc_event mmuDone;
-
 
 private:
   /** Translation Lookaside Buffer used by the MMU */
@@ -119,6 +116,7 @@ public:
    * @return The number of cache misses.
    */
   unsigned int getNumMisses() const;
+
 private:
   /** @brief Method that is called on the positive edge of the clock signal.
    * 

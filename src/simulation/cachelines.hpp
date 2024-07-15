@@ -1,84 +1,74 @@
 #pragma once
 
 #include <systemc>
+
 #include "cacheline.hpp"
+
 using namespace sc_core;
 
+/**
+ * @brief SystemC module representing a set of cache lines.
+ *
+ * This module contains multiple cache lines and orchestrates the read and write
+ * operations on them.
+ */
 SC_MODULE(CACHELINES) {
+public:
+  SC_HAS_PROCESS(CACHELINES);
 
- SC_HAS_PROCESS(CACHELINES);
-
- /**
-  * @brief Struct to hold the signals for tagOut, frameNumberOut, and initializedOut
-  * of a cache line.
-  */
- struct LineSignals {
-  /** @brief Signal for write enable */
-  sc_signal<bool> weSignal;
-
-  /** @brief Signal indicating if cache line is initialized
-   * (will be set to true in the constructor)
+  /** 
+   * Struct to hold the signals for tagOut, frameNumberOut, and initializedOut
+   * of a cache line.
    */
-  sc_signal<bool> initializedOutSignal;
+  struct LineSignals {
+    /** Signal for write enable */
+    sc_signal<bool> weSignal;
 
-  /** @brief Signal for the tag data */
-  sc_signal<sc_bv<32>> tagSignal;
+    /** @brief Signal indicating if cache line is initialized
+     * 
+     * (will be set to true in the constructor)
+     */
+    sc_signal<bool> initializedOutSignal;
 
-  /** @brief Signal for the frame number data */
-  sc_signal<sc_bv<32>> frameNumberSignal;
- };
+    /** Signal for the tag data */
+    sc_signal<sc_bv<32>> tagSignal;
 
- /**
-  * @brief Array of pointers to CacheLine modules.
-  */
- CACHELINE** cache;
+    /** Signal for the frame number data */
+    sc_signal<sc_bv<32>> frameNumberSignal;
+  };
 
- /**
-  * @brief Array of LineSignals for each CacheLine.
-  */
- LineSignals* lineSignals;
+  /** Array of pointers to CacheLine modules. */
+  CACHELINE** cache;
 
- /**
-  * @brief Input port for the tag data to be checked in the TLB.
-  */
- sc_in<sc_bv<32>> tag;
+  /** Array of LineSignals for each CacheLine. */
+  LineSignals* lineSignals;
 
- /**
-  * @brief Input port for the index to select the specific cache line.
-  */
- sc_in<sc_bv<32>> index;
+  /** Input port for the tag data to be checked in the TLB. */
+  sc_in<sc_bv<32>> tag;
 
- /**
-  * @brief Input port for the frame number data to be stored in the TLB.
-  */
- sc_in<sc_bv<32>> frameNumber;
+  /** Input port for the index to select the specific cache line. */
+  sc_in<sc_bv<32>> index;
 
- /**
-  * @brief Input port for the write enable signal.
-  */
- sc_in<bool> we;
+  /** Input port for the frame number data to be stored in the TLB. */
+  sc_in<sc_bv<32>> frameNumber;
 
- /**
-  * @brief Output port for the frame number stored in the cache line
-  */
- sc_out<sc_bv<32>> frameNumberOut;
+  /** Input port for the write enable signal. */
+  sc_in<bool> we;
 
- /**
-  * @brief Output port indicating whether the tag was found in the cache line
-  */
- sc_out<bool> found;
+  /** Output port for the frame number stored in the cache line */
+  sc_out<sc_bv<32>> frameNumberOut;
 
- /**
-  * @brief Size of the TLB
-  */
- unsigned tlbsize;
+  /** Output port indicating whether the tag was found in the cache line */
+  sc_out<bool> found;
 
- CACHELINES(sc_module_name name, unsigned tlbsize);
+  /** Size of the TLB */
+  unsigned tlbsize;
 
- /**
-  * @brief Destructor.
-  */
- ~CACHELINES();
+public:
+  CACHELINES(sc_module_name name, unsigned tlbsize);
 
- void update();
+  ~CACHELINES();
+
+private:
+  void update();
 };

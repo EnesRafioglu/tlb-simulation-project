@@ -97,7 +97,6 @@ void MMU::mmuOperation() {
       (found ? "TLB hit" : "TLB miss") << " for virtual address 0x" << std::hex << virtualAddress << " -> physical address 0x" << physicalAddress
     );
 
-
     // Send the physical address etc. to the memory module and wait for the memory
     memAddress.write(physicalAddress);
     memWriteEnabled.write(writeEnabled.read());

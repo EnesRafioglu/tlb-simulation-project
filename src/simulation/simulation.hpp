@@ -33,5 +33,4 @@ struct Result run_simulation(
   size_t numRequests,
   struct Request requests [],
   const char* tracefile
-
 );
