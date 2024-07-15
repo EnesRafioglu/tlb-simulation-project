@@ -98,6 +98,10 @@ extern "C" Result run_simulation(
 
 // Leave this function as-is, it is required by the SystemC library but will not be used.
 int sc_main(int argc, char* argv[]) {
+  // Suppress unused parameter warnings
+  (void)argc;
+  (void)argv;
+
   std::cerr << "Running the SystemC entrypoint function `sc_main` directly is not supported." << std::endl;
   
   return 1;
