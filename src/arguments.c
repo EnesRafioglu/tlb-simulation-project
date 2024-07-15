@@ -252,10 +252,12 @@ int validate_and_extract_number(char* argName, char* str, void* value,
       break;
     case PARSE_OUT_OF_RANGE:
       if (isSigned) {
-        fprintf(stderr, "Error: %s is out of range for the interval (%d, %d)\n\n",
+        fprintf(stderr,
+                "Error: %s is out of range for the interval (%d, %d)\n\n",
                 argName, INT_MIN, INT_MAX);
       } else {
-        fprintf(stderr, "Error: %s is out of range for the interval (%u, %u)\n\n",
+        fprintf(stderr,
+                "Error: %s is out of range for the interval (%u, %u)\n\n",
                 argName, 0, UINT_MAX);
       }
       return 1;
