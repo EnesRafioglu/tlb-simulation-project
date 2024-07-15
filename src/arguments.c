@@ -24,9 +24,8 @@
 // Forward declarations
 
 bool maybe_print_requires_value(int opt);
-void print_usage();
-void validate_and_extract_number(char* argName, char* str, void* value,
-                                 bool isSigned, int min);
+int validate_and_extract_number(char* argName, char* str, void* value,
+                                bool isSigned, int min, bool pow2);
 
 /**
  * @brief Enumeration of command line options.
@@ -233,9 +232,12 @@ void print_usage() {
  *                 signed or unsigned.
  * @param min The minimum value that the parsed value must be greater than or
  *            equal to.
+ * @param pow2 A boolean indicating whether the value must be a power of 2.
+ *
+ * @return 0 if the validation was successful, 1 otherwise.
  */
-void validate_and_extract_number(char* argName, char* str, void* value,
-                                 bool isSigned, int min) {
+int validate_and_extract_number(char* argName, char* str, void* value,
+                                bool isSigned, int min, bool pow2) {
   // Parse the string to an integer
   enum PARSE_RESULT result;
   if (isSigned) {
@@ -266,6 +268,12 @@ void validate_and_extract_number(char* argName, char* str, void* value,
     case PARSE_GENERAL_ERROR:
       fprintf(stderr, "Error: %s is not a valid number\n\n", argName);
       return 1;
+  }
+
+  // Check if the value must be a power of 2
+  if (pow2 && !is_power_of_two(*(unsigned int*)value)) {
+    fprintf(stderr, "Error: %s must be a power of 2\n\n", argName);
+    return 1;
   }
 
   // Check if the value is greater than or equal to the minimum
