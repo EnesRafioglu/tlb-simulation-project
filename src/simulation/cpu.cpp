@@ -39,6 +39,12 @@ void CPU::cpuOperation() {
     // Get the current request
     Request* const request = &requests[requestIndex];
 
+    debug_log(std::string(25, '+'));
+    debug_log(
+      "CPU",
+      "Processing request " << requestIndex << " with address 0x" << std::hex << request->addr << " and data 0x" << request->data
+    );
+
 
 
     // Send the request to the MMU
@@ -55,7 +61,14 @@ void CPU::cpuOperation() {
     if (request->we == false) {
       request->data = dataOut.read().to_uint();
 
+      debug_log(
+        "CPU",
+        "Received data 0x" << std::hex << request->data
+      );
+
     }
+
+    debug_log(std::string(25, '+'));
 
     ++requestIndex;
     wait();
