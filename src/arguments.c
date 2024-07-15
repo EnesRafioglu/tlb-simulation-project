@@ -26,7 +26,7 @@
 
 bool maybe_print_requires_value(int opt);
 int validate_and_extract_number(char* argName, char* str, void* value,
-                                bool isSigned, int min, bool pow2);
+                                bool isSigned, const void* min, bool pow2);
 
 /**
  * @brief Enumeration of command line options.
@@ -81,6 +81,11 @@ enum PARSE_ARG_RESULT parse_arguments(int argc, char* argv[],
 
   cnf->inputFile = NULL;
 
+  // Common minimum values for use with `validate_and_extract_number`
+  const int signedOne = 1;
+  const unsigned int unsignedZero = 0;
+  const unsigned int unsignedOne = 1;
+
   // Parse the command line arguments
   int opt;
   opterr = 0;
@@ -89,28 +94,30 @@ enum PARSE_ARG_RESULT parse_arguments(int argc, char* argv[],
       switch (opt) {
         case OPTION_CYCLES:
           RETURNS_0_OR_ARG_PARSE_ERROR(validate_and_extract_number(
-              "cycles", optarg, &cnf->cycles, true, 1, false));
+              "cycles", optarg, &cnf->cycles, true, &signedOne, false));
           break;
         case OPTION_BLOCKSIZE:
           RETURNS_0_OR_ARG_PARSE_ERROR(validate_and_extract_number(
-              "blocksize", optarg, &cnf->blocksize, false, 1, true));
+              "blocksize", optarg, &cnf->blocksize, false, &unsignedOne, true));
           break;
         case OPTION_V2B_BLOCK_OFFSET:
           RETURNS_0_OR_ARG_PARSE_ERROR(validate_and_extract_number(
-              "v2b-block-offset", optarg, &cnf->v2bBlockOffset, false, 0,
-              false));
+              "v2b-block-offset", optarg, &cnf->v2bBlockOffset, false,
+              &unsignedZero, false));
           break;
         case OPTION_TLB_SIZE:
           RETURNS_0_OR_ARG_PARSE_ERROR(validate_and_extract_number(
-              "tlb-size", optarg, &cnf->tlbSize, false, 1, true));
+              "tlb-size", optarg, &cnf->tlbSize, false, &unsignedOne, true));
           break;
         case OPTION_TLB_LATENCY:
           RETURNS_0_OR_ARG_PARSE_ERROR(validate_and_extract_number(
-              "tlb-latency", optarg, &cnf->tlbLatency, false, 0, false));
+              "tlb-latency", optarg, &cnf->tlbLatency, false, &unsignedZero,
+              false));
           break;
         case OPTION_MEMORY_LATENCY:
           RETURNS_0_OR_ARG_PARSE_ERROR(validate_and_extract_number(
-              "memory-latency", optarg, &cnf->memoryLatency, false, 0, false));
+              "memory-latency", optarg, &cnf->memoryLatency, false,
+              &unsignedZero, false));
           break;
         case OPTION_TRACE_FILE:
           if (optarg == NULL || strlen(optarg) == 0) {
@@ -230,14 +237,13 @@ void print_usage() {
  * @param value A pointer to the variable where the parsed value will be stored.
  * @param isSigned A boolean indicating whether the value should be treated as
  *                 signed or unsigned.
- * @param min The minimum value that the parsed value must be greater than or
- *            equal to.
+ * @param min A pointer to the minimum value that the parsed value must be
+ *            greater than or equal to.
  * @param pow2 A boolean indicating whether the value must be a power of 2.
- *
  * @return 0 if the validation was successful, 1 otherwise.
  */
 int validate_and_extract_number(char* argName, char* str, void* value,
-                                bool isSigned, int min, bool pow2) {
+                                bool isSigned, const void* min, bool pow2) {
   // Parse the string to an integer
   enum PARSE_RESULT result;
   if (isSigned) {
@@ -279,10 +285,13 @@ int validate_and_extract_number(char* argName, char* str, void* value,
   }
 
   // Check if the value is greater than or equal to the minimum
-  if ((isSigned && *(int*)value < min) ||
-      (!isSigned && *(unsigned int*)value < min)) {
+  if (isSigned && *(int*)value < *(int*)min) {
     fprintf(stderr, "Error: %s must be greater than or equal to %d\n\n",
-            argName, min);
+            argName, *(int*)min);
+    return 1;
+  } else if (!isSigned && *(unsigned int*)value < *(unsigned int*)min) {
+    fprintf(stderr, "Error: %s must be greater than or equal to %u\n\n",
+            argName, *(unsigned int*)min);
     return 1;
   }
 
