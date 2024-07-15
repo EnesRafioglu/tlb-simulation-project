@@ -3,8 +3,7 @@
 CACHELINE::CACHELINE(sc_module_name name):
       sc_module(name),
       tagStore("tagStore"),
-      frameNumberStore("frameNumberStore"),
-      initializedStore("initializedStore")
+      frameNumberStore("frameNumberStore")
 {
     //Bind the signals
     tagStore.d(tagIn);
@@ -13,14 +12,6 @@ CACHELINE::CACHELINE(sc_module_name name):
 
     frameNumberStore.d(dataIn);
     frameNumberStore.we(weIn);
-
-
-
-    constantTrue.write(true);
-
-    initializedStore.d(constantTrue);
-    initializedStore.we(weIn);
-    initializedStore.q(initializedOut);
 
 }
 

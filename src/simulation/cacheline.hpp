@@ -41,13 +41,6 @@ SC_MODULE(CACHELINE) {
      */
     sc_out<sc_bv<32>> frameNumberOut;
 
-    /**
-     * @brief Output port indicating whether the cache line is initialized.
-     */
-    sc_out<bool> initializedOut;
-     /**
-     * @brief Constructor.
-     */
 
  CACHELINE(sc_module_name name);
 
@@ -63,11 +56,6 @@ SC_MODULE(CACHELINE) {
     REGISTER frameNumberStore;
 
     /**
-     * @brief FlipFlop to store the initialization status.
-     */
-    FLIPFLOP initializedStore;
-
-    /**
      * @brief Signal to hold the intermediate tag data.
      */
     sc_signal<sc_bv<32>> tagSignal;
@@ -77,15 +65,7 @@ SC_MODULE(CACHELINE) {
      */
     sc_signal<sc_bv<32>> frameNumberSignal;
 
-    /**
-     * @brief Signal to hold the initialization status.
-     */
-    sc_signal<bool> initializedSignal;
 
-    /**
-     * @brief Constant signal set to true.
-     */
-    sc_signal<bool> constantTrue;
 
 
 };

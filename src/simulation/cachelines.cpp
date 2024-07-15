@@ -14,7 +14,6 @@ cache(new CACHELINE *[tlbsize]),lineSignals(new LineSignals[tlbsize]){
         cache[i]->tagOut(cache[i]->tagStore.q);
         cache[i]->frameNumberStore.q(lineSignals[i].frameNumberSignal);
         cache[i]->frameNumberOut(cache[i]->frameNumberStore.q);
-        cache[i]->initializedOut(lineSignals[i].initializedOutSignal);
         lineSignals[i].initializedOutSignal.write(true);
     }
 
