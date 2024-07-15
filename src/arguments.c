@@ -207,9 +207,9 @@ bool maybe_print_requires_value(int opt) {
   return true;
 }
 
-void print_usage() {
+void print_usage(const char* program_name) {
   printf(
-      "Usage: ./tlb [OPTIONS] INPUT_FILE\n"
+      "Usage: %s [OPTIONS] INPUT_FILE\n"
       "Options:\n"
       "  --cycles=<int>\t\tNumber of cycles to simulate\n"
       "  --blocksize=<unsigned>\tSize of a memory block in bytes\n"
@@ -220,7 +220,8 @@ void print_usage() {
       "  --memory-latency=<unsigned>\tThe latency of the main memory in "
       "cycles\n"
       "  --tf=<path>\t\t\tOutput path for a trace file with all signals\n"
-      "  --help\t\t\tPrint this help message\n");
+      "  --help\t\t\tPrint this help message\n",
+      program_name);
 }
 
 /**

@@ -11,14 +11,14 @@ TEST(PrintUsageTest, Output) {
   testing::internal::CaptureStdout();
   testing::internal::CaptureStderr();
 
-  print_usage();
+  print_usage("./my_little_potato");
 
   // Check output
   std::string output = testing::internal::GetCapturedStdout();
   std::string error = testing::internal::GetCapturedStderr();
   EXPECT_EQ(
     output,
-    "Usage: ./tlb [OPTIONS] INPUT_FILE\n"
+    "Usage: ./my_little_potato [OPTIONS] INPUT_FILE\n"
     "Options:\n"
     "  --cycles=<int>\t\tNumber of cycles to simulate\n"
     "  --blocksize=<unsigned>\tSize of a memory block in bytes\n"

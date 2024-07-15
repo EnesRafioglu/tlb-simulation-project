@@ -14,16 +14,24 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  // Get own name
+  char* own_binary_name = "tlb";
+  if (argc > 0 && argv[0] != NULL && argv[0][0] != '\0') {
+    own_binary_name = argv[0];
+  } else {
+    fprintf(stderr, "WARN: Couldn't determine own name\n");
+  }
+
   // Parse the command line arguments
   struct Configuration cnf;
   switch (parse_arguments(argc, argv, &cnf)) {
     case PARSE_ARG_RESULT_ERROR:
-      print_usage();
+      print_usage(own_binary_name);
 
       // 22 is the exit code for invalid arguments
       return 22;
     case PARSE_ARG_RESULT_HELP:
-      print_usage();
+      print_usage(own_binary_name);
 
       // The user only wanted to see the help message -> exit successfully
       return 0;

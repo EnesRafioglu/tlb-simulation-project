@@ -53,28 +53,32 @@ struct Configuration {
 };
 
 /**
- * @brief Parses the command line arguments and populates the Configuration structure.
- * 
+ * @brief Parses the command line arguments and populates the Configuration
+ * structure.
+ *
  * This function sets sensible defaults for all configuration parameters before
  * parsing the command line arguments. If an error occurs during parsing, an
  * error message is printed to stderr and the function returns
  * `PARSE_ARG_RESULT_ERROR`.
- * 
+ *
  * This function also handles the `--help` option, which prints the usage and
  * returns `PARSE_ARG_RESULT_HELP`.
  *
  * @param argc The number of command line arguments.
  * @param argv An array of strings containing the command line arguments.
  * @param cnf A pointer to the Configuration structure to be populated.
- * 
+ *
  * @return The result of parsing the command line arguments.
  */
-enum PARSE_ARG_RESULT parse_arguments(int argc, char* argv[], struct Configuration* cnf);
+enum PARSE_ARG_RESULT parse_arguments(int argc, char* argv[],
+                                      struct Configuration* cnf);
 
 /**
  * @brief Prints the usage information for the program.
  *
  * This function prints the usage information for the program, including the
  * available options and their descriptions.
+ *
+ * @param program_name The name of this program to be used in the usage message.
  */
-void print_usage();
+void print_usage(const char* program_name);
