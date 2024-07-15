@@ -139,6 +139,22 @@ enum PARSE_ARG_RESULT parse_arguments(int argc, char* argv[],
       optind++;
     }
   }
+
+  // Check if the input file was specified
+  if (cnf->inputFile == NULL) {
+    fprintf(stderr, "Error: No input file specified\n\n");
+
+    return PARSE_ARG_RESULT_ERROR;
+  }
+
+  // Check if the input file is a CSV file
+  if (!has_suffix(cnf->inputFile, ".csv")) {
+    fprintf(stderr,
+            "WARN: Input file does not have a .csv suffix - will continue for "
+            "now\n");
+  }
+
+  return PARSE_ARG_RESULT_SUCCESS;
 }
 
 /**
