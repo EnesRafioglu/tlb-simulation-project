@@ -45,6 +45,11 @@ public:
   /** Data that was read from memory */
   sc_in<sc_bv<32>> memDataOut;
 
+  sc_in<bool> nextRequest;
+
+    sc_signal<sc_bv<32>> fout;
+    sc_signal<bool> weout;
+
   /** Event that signals to the CPU that the current operation is done */
   sc_event mmuDone;
 

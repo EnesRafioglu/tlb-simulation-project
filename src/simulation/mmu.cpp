@@ -24,6 +24,8 @@ MMU::MMU(
   tlb->pageNumberIn(sigTlbVirtualPageNumber);
   tlb->frameNumberIn(sigTlbPhysicalFrameNumber);
   tlb->found(sigTlbFound);
+  tlb->frameNumberOut(fout);
+  tlb->we(weout);
 
   // Wire up the memory module
   memWriteEnabled(sigMemWriteEnabled);
@@ -41,7 +43,7 @@ MMU::MMU(
 
   dont_initialize();
 
-  sensitive << address << writeEnabled << dataIn;
+  sensitive << nextRequest;
 }
 
 unsigned int MMU::getNumHits() const {
@@ -90,10 +92,6 @@ void MMU::mmuOperation() {
     // Calculate the physical address
     const uint32_t physicalAddress = (physicalFrame << (32 - numPageBits)) | takeTrailingNBits(virtualAddress, (32 - numPageBits));
 
-    debug_log(
-      "MMU",
-      (found ? "TLB hit" : "TLB miss") << " for virtual address 0x" << std::hex << virtualAddress << " -> physical address 0x" << physicalAddress
-    );
 
     // Send the physical address etc. to the memory module and wait for the memory
     memAddress.write(physicalAddress);

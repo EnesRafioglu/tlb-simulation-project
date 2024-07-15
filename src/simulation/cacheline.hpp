@@ -29,7 +29,7 @@ SC_MODULE(CACHELINE) {
     /**
      * @brief Input port for the write enable signal.
      */
-    sc_in<bool> we;
+    sc_in<bool> weIn;
 
     /**
      * @brief Output port for the tag data stored in the cache line.
@@ -51,7 +51,7 @@ SC_MODULE(CACHELINE) {
 
  CACHELINE(sc_module_name name);
 
-  private:
+
     /**
      * @brief Register to store the tag data.
      */

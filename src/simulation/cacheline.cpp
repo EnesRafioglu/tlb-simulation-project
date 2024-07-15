@@ -8,20 +8,19 @@ CACHELINE::CACHELINE(sc_module_name name):
 {
     //Bind the signals
     tagStore.d(tagIn);
-    tagStore.we(we);
-    tagStore.q(tagSignal);
-    tagOut(tagSignal);
+    tagStore.we(weIn);
+
 
     frameNumberStore.d(dataIn);
-    frameNumberStore.we(we);
-    frameNumberStore.q(frameNumberSignal);
-    frameNumberOut(frameNumberSignal);
+    frameNumberStore.we(weIn);
+
+
 
     constantTrue.write(true);
 
     initializedStore.d(constantTrue);
-    initializedStore.we(we);
-    initializedStore.q(initializedSignal);
-    initializedOut(initializedSignal);
+    initializedStore.we(weIn);
+    initializedStore.q(initializedOut);
+
 }
 

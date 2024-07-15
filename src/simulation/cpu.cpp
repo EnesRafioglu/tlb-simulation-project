@@ -18,6 +18,9 @@ CPU::CPU(
   mmu->address(sigAddress);
   mmu->dataIn(sigDataIn);
   mmu->dataOut(sigDataOut);
+  mmu->nextRequest(sigNext);
+
+  sendingNextRequest(sigNext);
 
   // Register the CPU operation method and sensitivity list
   SC_THREAD(cpuOperation);
@@ -36,17 +39,14 @@ void CPU::cpuOperation() {
     // Get the current request
     Request* const request = &requests[requestIndex];
 
-    debug_log(std::string(25, '+'));
-    debug_log(
-      "CPU",
-      "Processing request " << requestIndex << " with address 0x" << std::hex << request->addr << " and data 0x" << request->data
-    );
 
 
     // Send the request to the MMU
     address.write(request->addr);
     dataIn.write(request->data);
     writeEnabled.write(request->we);
+    //Trigger the MMU
+    sigNext.write(!sigNext.read());
 
     // Wait for the MMU to process the request
     wait(mmu->mmuDone);
@@ -55,13 +55,7 @@ void CPU::cpuOperation() {
     if (request->we == false) {
       request->data = dataOut.read().to_uint();
 
-      debug_log(
-        "CPU",
-        "Received data 0x" << std::hex << request->data
-      );
     }
-
-    debug_log(std::string(25, '+'));
 
     ++requestIndex;
     wait();

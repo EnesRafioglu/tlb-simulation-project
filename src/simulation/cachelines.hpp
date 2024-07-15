@@ -13,12 +13,14 @@ SC_MODULE(CACHELINES) {
     /**
      * @brief Struct to hold the signals for tagOut, frameNumberOut, and initializedOut.
      */
-    struct LineSignals {
-        sc_signal<bool> weSignal;
-        sc_signal<sc_bv<32>> tagOutSignal;
-        sc_signal<sc_bv<32>> frameNumberOutSignal;
-        sc_signal<bool> initializedOutSignal;
-    };
+
+     struct LineSignals {
+      sc_signal<bool> weSignal;
+      sc_signal<bool> initializedOutSignal;
+      sc_signal<sc_bv<32>> tagSignal;
+      sc_signal<sc_bv<32>> frameNumberSignal;
+     };
+
 
     /**
      * @brief Array of pointers to CacheLine modules.

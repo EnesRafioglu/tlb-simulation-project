@@ -9,10 +9,13 @@ cache(new CACHELINE *[tlbsize]),lineSignals(new LineSignals[tlbsize]){
         cache[i]->tagIn(tag);
         cache[i]->dataIn(frameNumber);
 
-        cache[i]->we(lineSignals[i].weSignal);
-        cache[i]->tagOut(lineSignals[i].tagOutSignal);
-        cache[i]->frameNumberOut(lineSignals[i].frameNumberOutSignal);
+        cache[i]->weIn(lineSignals[i].weSignal);
+        cache[i]->tagStore.q(lineSignals[i].tagSignal);
+        cache[i]->tagOut(cache[i]->tagStore.q);
+        cache[i]->frameNumberStore.q(lineSignals[i].frameNumberSignal);
+        cache[i]->frameNumberOut(cache[i]->frameNumberStore.q);
         cache[i]->initializedOut(lineSignals[i].initializedOutSignal);
+        lineSignals[i].initializedOutSignal.write(true);
     }
 
     SC_THREAD(update);
@@ -24,9 +27,11 @@ void CACHELINES::update() {
         wait();
         unsigned int idx = index->read().to_uint();
         lineSignals[idx].weSignal.write(we->read());
-        frameNumberOut->write(lineSignals[idx].frameNumberOutSignal.read());
+        lineSignals[idx].frameNumberSignal.write(frameNumber.read());
+        lineSignals[idx].tagSignal.write(tag.read());
+        frameNumberOut->write(cache[idx]->frameNumberStore.q->read());
         bool tlbIsInitialized = lineSignals[idx].initializedOutSignal.read();
-        bool tagNumbersMatch = tag->read() == lineSignals[idx].tagOutSignal.read();
+        bool tagNumbersMatch = tag->read() == cache[idx]->tagStore.q.read();;
         found->write(tlbIsInitialized && tagNumbersMatch);
     }
 }
