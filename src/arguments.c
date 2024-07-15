@@ -112,6 +112,11 @@ enum PARSE_ARG_RESULT parse_arguments(int argc, char* argv[],
               "memory-latency", optarg, &cnf->memoryLatency, false, 0, false));
           break;
         case OPTION_TRACE_FILE:
+          if (optarg == NULL || strlen(optarg) == 0) {
+            fprintf(stderr, "Error: --tf requires a value\n\n");
+            return PARSE_ARG_RESULT_ERROR;
+          }
+
           cnf->traceFile = optarg;
           break;
         case OPTION_HELP:
