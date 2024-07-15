@@ -1,32 +1,35 @@
 #include "csv.h"
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include "util.h"
 
 /**
- * Counts the number of non empty lines in a given file.
- * This is used to determine the size of the array that will store the requests.
- * Therefore only one memory allocation is needed.
+ * Counts the number of non empty lines in a given file from the current
+ * position.
  *
- * @param filename The name of the file to count lines from.
- * @return The number of lines in the file.
+ * If this function doesn't return `-1`, the file position will be reset to the
+ * original position. If it returns `-1`, the file position will be undefined.
+ *
+ * @param file The file to be read.
+ * @return The number of lines in the file, or `-1` if an error occurred.
  */
-unsigned int count_lines(const char* filename) {
-  FILE* file;
+unsigned int count_lines(FILE* file) {
+  // Save the current position in the file
+  off_t pos = ftello(file);
+  if (pos == -1) {
+    fprintf(stderr, "Error: Couldn't get the current position in the file\n");
 
-  file = fopen(filename, "r");
-
-  if (!file) {
-    fprintf(stderr, "Error: Couldn't open input file %s\n", filename);
-
-    return 0;
+    return -1;
   }
 
+  // Count the number of lines
   unsigned int lines = 0;
-
   char buffer[35];
 
   while (fgets(buffer, sizeof(buffer), file)) {
@@ -35,14 +38,16 @@ unsigned int count_lines(const char* filename) {
     }
   }
 
-  if (feof(file)) {
-    fclose(file);
-    return lines;
-  } else {
-    fprintf(stderr, "Some error occurred while reading the file\n");
-    fclose(file);
-    return 0;
+  // Cleanup
+  int was_eof = feof(file);
+
+  if (fseeko(file, pos, SEEK_SET) == -1) {
+    fprintf(stderr, "Error: Couldn't reset the position in the file\n");
+
+    return -1;
   }
+
+  return was_eof ? lines : -1;
 }
 
 /**
@@ -83,29 +88,69 @@ char* tokenize_string(char* str) {
   return token;
 }
 
-struct Request* parse_csv(const char* filename, int* line_count) {
-  *line_count = count_lines(filename);
+enum PARSE_CSV_RESULT parse_csv(const char* filename, int* line_count,
+                                struct Request** requests_out) {
+  // Do basic checks to see if the file exists and is not a directory
+  struct stat st;
+  if (stat(filename, &st) == -1) {
+    switch (errno) {
+      case ENOENT:
+        fprintf(stderr, "Error: File %s does'nt exist\n", filename);
+
+        return PARSE_CSV_RESULT_NO_FILE;
+      case EACCES:
+        fprintf(stderr, "Error: Permission denied for file %s\n", filename);
+
+        return PARSE_CSV_RESULT_PERMISSION_DENIED;
+      default:
+        fprintf(stderr, "Error: Couldn't open input file %s\n", filename);
+
+        return PARSE_CSV_RESULT_IO_ERROR;
+    }
+  }
+
+  if (S_ISDIR(st.st_mode)) {
+    fprintf(stderr, "Error: %s is a directory, not a file\n", filename);
+
+    return PARSE_CSV_RESULT_IS_DIRECTORY;
+  } else if (!S_ISREG(st.st_mode)) {
+    fprintf(stderr, "Error: %s is not a regular file\n", filename);
+
+    return PARSE_CSV_RESULT_IO_ERROR;
+  }
+
+  // Open the file
+  FILE* file = fopen(filename, "r");
+  if (!file) {
+    // We assume that the file exists, so if it can't be opened, it's an I/O
+    // error (don't try to account for races here as it's an error anyway)
+    fprintf(stderr, "Error: Couldn't open input file %s\n", filename);
+
+    return PARSE_CSV_RESULT_IO_ERROR;
+  }
+
+  // Count the number of lines in the file to allocate the correct amount of
+  // memory
+  *line_count = count_lines(file);
+  if (*line_count == -1) {
+    fclose(file);
+
+    return PARSE_CSV_RESULT_IO_ERROR;
+  }
 
   if (*line_count == 0) {
-    return NULL;
+    return PARSE_CSV_RESULT_SUCCESS;
   }
 
-  FILE* file;
-  file = fopen(filename, "r");
-
-  if (!file) {
-    fprintf(stderr, "Error: Couldn't open input file %s\n", filename);
-    return NULL;
-  }
-
-  struct Request* requests =
+  // Allocate memory for the requests
+  // Don't yet pass the pointer to the caller, as we might encounter an error
+  struct Request* parsed_requests =
       (struct Request*)malloc(*line_count * sizeof(struct Request));
-
-  if (!requests) {
+  if (!parsed_requests) {
     fprintf(stderr, "Error: Couldn't allocate memory for requests\n");
     fclose(file);
 
-    return NULL;
+    return PARSE_CSV_RESULT_PARSE_ERROR;
   }
 
   // longest possible line is 33 characters long
@@ -125,8 +170,8 @@ struct Request* parse_csv(const char* filename, int* line_count) {
               *line_count + 1);
 
       fclose(file);
-      free(requests);
-      exit(22);
+      free(parsed_requests);
+      return PARSE_CSV_RESULT_PARSE_ERROR;
     }
 
     // check if the line is too long
@@ -138,8 +183,8 @@ struct Request* parse_csv(const char* filename, int* line_count) {
               *line_count + 1);
 
       fclose(file);
-      free(requests);
-      exit(22);
+      free(parsed_requests);
+      return PARSE_CSV_RESULT_PARSE_ERROR;
     }
 
     int token_count = 0;
@@ -169,8 +214,8 @@ struct Request* parse_csv(const char* filename, int* line_count) {
                 *line_count + 1);
 
         fclose(file);
-        free(requests);
-        exit(22);
+        free(parsed_requests);
+        return PARSE_CSV_RESULT_PARSE_ERROR;
       }
 
       if (token_count == 0) {
@@ -185,8 +230,8 @@ struct Request* parse_csv(const char* filename, int* line_count) {
                     token[0], *line_count + 1);
 
             fclose(file);
-            free(requests);
-            exit(22);
+            free(parsed_requests);
+            return PARSE_CSV_RESULT_PARSE_ERROR;
           }
 
         } else if (strlen(token) == 3) {
@@ -203,8 +248,8 @@ struct Request* parse_csv(const char* filename, int* line_count) {
                   token[1], *line_count + 1);
 
               fclose(file);
-              free(requests);
-              exit(22);
+              free(parsed_requests);
+              return PARSE_CSV_RESULT_PARSE_ERROR;
             }
           }
 
@@ -216,8 +261,8 @@ struct Request* parse_csv(const char* filename, int* line_count) {
                   *line_count + 1);
 
           fclose(file);
-          free(requests);
-          exit(22);
+          free(parsed_requests);
+          return PARSE_CSV_RESULT_PARSE_ERROR;
         }
 
       } else if (token_count == 1) {
@@ -238,8 +283,8 @@ struct Request* parse_csv(const char* filename, int* line_count) {
                 token, *line_count + 1);
 
             fclose(file);
-            free(requests);
-            exit(22);
+            free(parsed_requests);
+            return PARSE_CSV_RESULT_PARSE_ERROR;
           case PARSE_NO_DIGITS:
             fprintf(
                 stderr,
@@ -249,8 +294,8 @@ struct Request* parse_csv(const char* filename, int* line_count) {
                 token, *line_count + 1);
 
             fclose(file);
-            free(requests);
-            exit(22);
+            free(parsed_requests);
+            return PARSE_CSV_RESULT_PARSE_ERROR;
           case PARSE_CHARACTERS_LEFT:
             fprintf(
                 stderr,
@@ -260,8 +305,8 @@ struct Request* parse_csv(const char* filename, int* line_count) {
                 token, *line_count + 1);
 
             fclose(file);
-            free(requests);
-            exit(22);
+            free(parsed_requests);
+            return PARSE_CSV_RESULT_PARSE_ERROR;
           case PARSE_GENERAL_ERROR:
             fprintf(
                 stderr,
@@ -271,8 +316,8 @@ struct Request* parse_csv(const char* filename, int* line_count) {
                 token, *line_count + 1);
 
             fclose(file);
-            free(requests);
-            exit(22);
+            free(parsed_requests);
+            return PARSE_CSV_RESULT_PARSE_ERROR;
         }
 
       } else if (token_count == 2) {
@@ -293,8 +338,8 @@ struct Request* parse_csv(const char* filename, int* line_count) {
                   token, *line_count + 1);
 
               fclose(file);
-              free(requests);
-              exit(22);
+              free(parsed_requests);
+              return PARSE_CSV_RESULT_PARSE_ERROR;
             case PARSE_NO_DIGITS:
               fprintf(
                   stderr,
@@ -304,8 +349,8 @@ struct Request* parse_csv(const char* filename, int* line_count) {
                   token, *line_count + 1);
 
               fclose(file);
-              free(requests);
-              exit(22);
+              free(parsed_requests);
+              return PARSE_CSV_RESULT_PARSE_ERROR;
             case PARSE_CHARACTERS_LEFT:
               fprintf(
                   stderr,
@@ -315,8 +360,8 @@ struct Request* parse_csv(const char* filename, int* line_count) {
                   token, *line_count + 1);
 
               fclose(file);
-              free(requests);
-              exit(22);
+              free(parsed_requests);
+              return PARSE_CSV_RESULT_PARSE_ERROR;
             case PARSE_GENERAL_ERROR:
               fprintf(
                   stderr,
@@ -326,8 +371,8 @@ struct Request* parse_csv(const char* filename, int* line_count) {
                   token, *line_count + 1);
 
               fclose(file);
-              free(requests);
-              exit(22);
+              free(parsed_requests);
+              return PARSE_CSV_RESULT_PARSE_ERROR;
           }
 
         } else {
@@ -338,8 +383,8 @@ struct Request* parse_csv(const char* filename, int* line_count) {
                   *line_count + 1);
 
           fclose(file);
-          free(requests);
-          exit(22);
+          free(parsed_requests);
+          return PARSE_CSV_RESULT_PARSE_ERROR;
         }
       } else {
         fprintf(stderr,
@@ -348,8 +393,8 @@ struct Request* parse_csv(const char* filename, int* line_count) {
                 *line_count + 1);
 
         fclose(file);
-        free(requests);
-        exit(22);
+        free(parsed_requests);
+        return PARSE_CSV_RESULT_PARSE_ERROR;
       }
 
       token = tokenize_string(NULL);
@@ -363,14 +408,16 @@ struct Request* parse_csv(const char* filename, int* line_count) {
               *line_count + 1);
 
       fclose(file);
-      free(requests);
-      exit(22);
+      free(parsed_requests);
+      return PARSE_CSV_RESULT_PARSE_ERROR;
     }
 
-    requests[*line_count] = request;
+    parsed_requests[*line_count] = request;
     (*line_count)++;
   }
 
+  *requests_out = parsed_requests;
+
   fclose(file);
-  return requests;
+  return PARSE_CSV_RESULT_SUCCESS;
 }
