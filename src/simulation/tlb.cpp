@@ -1,8 +1,9 @@
-#include "newtlb.hpp"
+#include "tlb.hpp"
 
-NEWTLB::NEWTLB(sc_module_name name, CACHELINES* cache)
+TLB::TLB(sc_module_name name, CACHELINES* cache)
     : sc_module(name), cache(cache), tlbsize(cache->tlbsize) {
 
+    //Connect all ports
     cache->tag(tagSignal);
     cache->index(indexSignal);
     cache->we(we);
@@ -14,10 +15,13 @@ NEWTLB::NEWTLB(sc_module_name name, CACHELINES* cache)
     sensitive << pageNumberIn << frameNumberIn << we;
 }
 
-void NEWTLB::update() {
+void TLB::update() {
     while (true) {
         wait();
+        //calculate the amount of bits resrved for the index
         unsigned int numIndex = std::log2(tlbsize);
+
+        //calcute the tag and index of the virtual page and pass them on to the cache
         unsigned int vp = pageNumberIn->read().to_uint();
         indexSignal.write(takeTrailingNBits(vp, numIndex));
         tagSignal.write(vp >> numIndex);

@@ -3,7 +3,7 @@
 
 #include "simulation.hpp"
 
-#include "newtlb.hpp"
+#include "tlb.hpp"
 #include "memory.hpp"
 #include "mmu.hpp"
 #include "cpu.hpp"
@@ -70,7 +70,9 @@ extern "C" Result run_simulation(
   //* Create SystemC modules
   // Create the TLB
   CACHELINES cache("cache",tlbSize);
-  NEWTLB tlb("tlb", &cache);
+
+  //Create the TLB
+  TLB tlb("tlb", &cache);
 
   // Create the Memory
   Memory memory("memory");

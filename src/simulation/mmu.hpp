@@ -4,7 +4,7 @@
 
 #include "cachelines.hpp"
 #include "memory.hpp"
-#include "newtlb.hpp"
+#include "tlb.hpp"
 
 using namespace sc_core;
 using namespace sc_dt;
@@ -45,17 +45,22 @@ public:
   /** Data that was read from memory */
   sc_in<sc_bv<32>> memDataOut;
 
+  /** Port that alerts the mmu whenever the next request is available */
   sc_in<bool> nextRequest;
 
+    /** These signals wont be used.
+      * They are required because we have to bind each port
+      */
     sc_signal<sc_bv<32>> fout;
     sc_signal<bool> weout;
 
   /** Event that signals to the CPU that the current operation is done */
   sc_event mmuDone;
 
+
 private:
   /** Translation Lookaside Buffer used by the MMU */
-  NEWTLB* tlb;
+  TLB* tlb;
 
   /** Offset for virtual to block address translation */
   unsigned int v2bBlockOffset;
@@ -93,7 +98,7 @@ private:
 public:
   MMU(
     sc_module_name name,
-    NEWTLB* tlb,
+    TLB* tlb,
     Memory* memory,
     unsigned int blocksize,
     unsigned int v2bBlockOffset,

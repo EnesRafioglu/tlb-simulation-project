@@ -9,7 +9,6 @@ CACHELINE::CACHELINE(sc_module_name name):
     tagStore.d(tagIn);
     tagStore.we(weIn);
 
-
     frameNumberStore.d(dataIn);
     frameNumberStore.we(weIn);
 

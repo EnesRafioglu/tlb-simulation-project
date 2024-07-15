@@ -5,7 +5,7 @@
 
 MMU::MMU(
   sc_module_name name,
-  NEWTLB* tlb,
+  TLB* tlb,
   Memory* memory,
   unsigned int blocksize,
   unsigned int v2bBlockOffset,
