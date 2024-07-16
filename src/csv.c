@@ -13,8 +13,8 @@
  * Counts the number of non empty lines in a given file from the current
  * position.
  *
- * If this function doesn't return `-1`, the file position will be reset to the
- * original position. If it returns `-1`, the file position will be undefined.
+ * If this function doesn't return `-1`, the file position will not be altered.
+ * If it returns `-1`, the file position will be undefined.
  *
  * @param file The file to be read.
  * @return The number of lines in the file, or `-1` if an error occurred.
@@ -94,12 +94,12 @@ char* tokenize_string(char* str) {
  *
  * @param token The token containing the number to be parsed.
  * @param value A pointer to the variable where the parsed number will be
- * stored.
+ *              stored.
  * @param type The type of the number being parsed (for error message display).
  * @param line_number The line number where the parsing is being performed (for
- * error message display).
+ *                    error message display).
  * @return Returns 0 if the number was successfully parsed, or a non-zero value
- * if an error occurred.
+ *         if an error occurred.
  */
 int parse_number_with_error_messages(const char* token, uint32_t* value,
                                      const char* type, int line_number) {
@@ -140,6 +140,7 @@ int parse_number_with_error_messages(const char* token, uint32_t* value,
       break;
   }
 
+  // Future proofing: if more cases are added to the enum, this will catch them
   return 1;
 }
 
@@ -224,9 +225,7 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, int* line_count,
               "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n",
               *line_count + 1);
 
-      fclose(file);
-      free(parsed_requests);
-      return PARSE_CSV_RESULT_PARSE_ERROR;
+      goto parse_csv_error_cleanup;
     }
 
     // check if the line is too long
@@ -237,9 +236,7 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, int* line_count,
               "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n",
               *line_count + 1);
 
-      fclose(file);
-      free(parsed_requests);
-      return PARSE_CSV_RESULT_PARSE_ERROR;
+      goto parse_csv_error_cleanup;
     }
 
     int token_count = 0;
@@ -268,9 +265,7 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, int* line_count,
                 "inputs: R,0x00000000\n\t\t\tW,1,0x1337\n",
                 *line_count + 1);
 
-        fclose(file);
-        free(parsed_requests);
-        return PARSE_CSV_RESULT_PARSE_ERROR;
+        goto parse_csv_error_cleanup;
       }
 
       if (token_count == 0) {
@@ -284,9 +279,7 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, int* line_count,
                     "%d)\n\texample inputs: R,0x00000000\n\t\t\tW,1,0x1337\n",
                     token[0], *line_count + 1);
 
-            fclose(file);
-            free(parsed_requests);
-            return PARSE_CSV_RESULT_PARSE_ERROR;
+            goto parse_csv_error_cleanup;
           }
 
         } else if (strlen(token) == 3) {
@@ -302,9 +295,7 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, int* line_count,
                   "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n",
                   token[1], *line_count + 1);
 
-              fclose(file);
-              free(parsed_requests);
-              return PARSE_CSV_RESULT_PARSE_ERROR;
+              goto parse_csv_error_cleanup;
             }
           }
 
@@ -315,9 +306,7 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, int* line_count,
                   "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n",
                   *line_count + 1);
 
-          fclose(file);
-          free(parsed_requests);
-          return PARSE_CSV_RESULT_PARSE_ERROR;
+          goto parse_csv_error_cleanup;
         }
 
       } else if (token_count == 1) {
@@ -325,9 +314,7 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, int* line_count,
 
         if (parse_number_with_error_messages(token, &request.addr, "Address",
                                              *line_count + 1)) {
-          fclose(file);
-          free(parsed_requests);
-          return PARSE_CSV_RESULT_PARSE_ERROR;
+          goto parse_csv_error_cleanup;
         }
 
       } else if (token_count == 2) {
@@ -336,11 +323,9 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, int* line_count,
           // parse the data and check for errors
           if (parse_number_with_error_messages(token, &request.data, "Data",
                                                *line_count + 1)) {
-            fclose(file);
-            free(parsed_requests);
-            return PARSE_CSV_RESULT_PARSE_ERROR;
+            goto parse_csv_error_cleanup;
           }
-          
+
         } else {
           fprintf(stderr,
                   "Error: Read type shouldn't have data (line: %d)\n\texample "
@@ -348,9 +333,7 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, int* line_count,
                   "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n",
                   *line_count + 1);
 
-          fclose(file);
-          free(parsed_requests);
-          return PARSE_CSV_RESULT_PARSE_ERROR;
+          goto parse_csv_error_cleanup;
         }
       } else {
         fprintf(stderr,
@@ -358,9 +341,7 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, int* line_count,
                 "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n",
                 *line_count + 1);
 
-        fclose(file);
-        free(parsed_requests);
-        return PARSE_CSV_RESULT_PARSE_ERROR;
+        goto parse_csv_error_cleanup;
       }
 
       token = tokenize_string(NULL);
@@ -373,9 +354,7 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, int* line_count,
               "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n",
               *line_count + 1);
 
-      fclose(file);
-      free(parsed_requests);
-      return PARSE_CSV_RESULT_PARSE_ERROR;
+      goto parse_csv_error_cleanup;
     }
 
     parsed_requests[*line_count] = request;
@@ -386,4 +365,11 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, int* line_count,
 
   fclose(file);
   return PARSE_CSV_RESULT_SUCCESS;
+
+// Clean up in case of an error
+parse_csv_error_cleanup:
+  fclose(file);
+  free(parsed_requests);
+
+  return PARSE_CSV_RESULT_PARSE_ERROR;
 }
