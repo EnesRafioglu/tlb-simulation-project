@@ -109,33 +109,23 @@ int parse_number_with_error_messages(const char* token, uint32_t* value,
     case PARSE_SUCCESS:
       return 0;
     case PARSE_OUT_OF_RANGE:
-      fprintf(stderr,
-              "Error: %s %s is out of range (line: %d)\n\texample inputs: "
-              "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n",
-              type, token, line_number);
+      fprintf(stderr, "Error: %s %s is out of range (line: %d)\n", type, token,
+              line_number);
 
       break;
     case PARSE_NO_DIGITS:
-      fprintf(
-          stderr,
-          "Error: %s %s doesn't contain any digits (line: %d)\n\texample "
-          "inputs: R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n",
-          type, token, line_number);
+      fprintf(stderr, "Error: %s %s doesn't contain any digits (line: %d)\n",
+              type, token, line_number);
 
       break;
     case PARSE_CHARACTERS_LEFT:
-      fprintf(
-          stderr,
-          "Error: %s %s contains extra characters (line: %d)\n\texample "
-          "inputs: R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n",
-          type, token, line_number);
+      fprintf(stderr, "Error: %s %s contains extra characters (line: %d)\n",
+              type, token, line_number);
 
       break;
     case PARSE_GENERAL_ERROR:
-      fprintf(stderr,
-              "Error: Couldn't parse %s %s (line: %d)\n\texample inputs: "
-              "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n",
-              type, token, line_number);
+      fprintf(stderr, "Error: Couldn't parse %s %s (line: %d)\n", type, token,
+              line_number);
 
       break;
   }
@@ -221,8 +211,7 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, int* line_count,
     if (buffer[0] == '\n' || buffer[0] == '\r') {
       fprintf(stderr,
               "Error: Empty lines are not allowed (except for the last line) "
-              "(line: %d)\n\texample inputs: "
-              "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n",
+              "(line: %d)\n",
               *line_count + 1);
 
       goto parse_csv_error_cleanup;
@@ -232,8 +221,7 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, int* line_count,
     if (strlen(buffer) > 33) {
       fprintf(stderr,
               "Error: Too many characters encountered. Could be unnecessary "
-              "white spaces (line: %d)\n\texample inputs: "
-              "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n",
+              "white spaces (line: %d)\n",
               *line_count + 1);
 
       goto parse_csv_error_cleanup;
@@ -261,8 +249,7 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, int* line_count,
 
         fprintf(stderr,
                 "Error: Multiple commas in a row or a comma at the "
-                "beginning/end of a line are not allowed (line: %d)\n\texample "
-                "inputs: R,0x00000000\n\t\t\tW,1,0x1337\n",
+                "beginning/end of a line are not allowed (line: %d)\n",
                 *line_count + 1);
 
         goto parse_csv_error_cleanup;
@@ -276,7 +263,7 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, int* line_count,
           } else {
             fprintf(stderr,
                     "Error: Accesstype must be either W or R not '%c' (line: "
-                    "%d)\n\texample inputs: R,0x00000000\n\t\t\tW,1,0x1337\n",
+                    "%d)\n",
                     token[0], *line_count + 1);
 
             goto parse_csv_error_cleanup;
@@ -288,12 +275,10 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, int* line_count,
                 token[1] == 'w') {
               request.we = token[1] == 'W' || token[1] == 'w';
             } else {
-              fprintf(
-                  stderr,
-                  "Error: Accesstype must be either W or R not '%c' (line: "
-                  "%d)\n\texample inputs: "
-                  "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n",
-                  token[1], *line_count + 1);
+              fprintf(stderr,
+                      "Error: Accesstype must be either W or R not '%c' (line: "
+                      "%d)\n",
+                      token[1], *line_count + 1);
 
               goto parse_csv_error_cleanup;
             }
@@ -302,8 +287,7 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, int* line_count,
         } else {
           fprintf(stderr,
                   "Error: Accesstype must be a single character with or "
-                  "without quotes (line: %d)\n\texample inputs: "
-                  "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n",
+                  "without quotes (line: %d)\n",
                   *line_count + 1);
 
           goto parse_csv_error_cleanup;
@@ -327,18 +311,13 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, int* line_count,
           }
 
         } else {
-          fprintf(stderr,
-                  "Error: Read type shouldn't have data (line: %d)\n\texample "
-                  "inputs: "
-                  "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n",
+          fprintf(stderr, "Error: Read type shouldn't have data (line: %d)\n",
                   *line_count + 1);
 
           goto parse_csv_error_cleanup;
         }
       } else {
-        fprintf(stderr,
-                "Error: Too many tokens in line (line: %d)\n\texample inputs: "
-                "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n",
+        fprintf(stderr, "Error: Too many tokens in line (line: %d)\n",
                 *line_count + 1);
 
         goto parse_csv_error_cleanup;
@@ -349,9 +328,7 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, int* line_count,
     }
 
     if (token_count < 2 || ((request.we == 1) && (token_count < 3))) {
-      fprintf(stderr,
-              "Error: Too few tokens in line (line: %d)\n\texample inputs: "
-              "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n",
+      fprintf(stderr, "Error: Too few tokens in line (line: %d)\n",
               *line_count + 1);
 
       goto parse_csv_error_cleanup;
@@ -368,6 +345,10 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, int* line_count,
 
 // Clean up in case of an error
 parse_csv_error_cleanup:
+  fprintf(stderr,
+          "\texample inputs: "
+          "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n");
+
   fclose(file);
   free(parsed_requests);
 
