@@ -8,33 +8,34 @@
 #include <unistd.h>
 
 #include "util.h"
+#include <sys/types.h>
 
 /**
  * Counts the number of non empty lines in a given file from the current
  * position.
  *
- * If this function doesn't return `-1`, the file position will not be altered.
- * If it returns `-1`, the file position will be undefined.
+ * If this function doesn't return `1`, the file position will not be altered.
+ * If it returns `1`, the file position will be undefined.
  *
  * @param file The file to be read.
- * @return The number of lines in the file, or `-1` if an error occurred.
+ * @return 0 on success, 1 on failure.
  */
-unsigned int count_lines(FILE* file) {
+  int count_lines(FILE* file, unsigned int* lines) {
   // Save the current position in the file
   off_t pos = ftello(file);
   if (pos == -1) {
     fprintf(stderr, "Error: Couldn't get the current position in the file\n");
 
-    return -1;
+    return 1;
   }
 
   // Count the number of lines
-  unsigned int lines = 0;
+  *lines = 0;
   char buffer[35];
 
   while (fgets(buffer, sizeof(buffer), file)) {
     if (buffer[0] != '\n' && buffer[0] != '\r') {
-      lines++;
+      (*lines)++;
     }
   }
 
@@ -44,10 +45,10 @@ unsigned int count_lines(FILE* file) {
   if (fseeko(file, pos, SEEK_SET) == -1) {
     fprintf(stderr, "Error: Couldn't reset the position in the file\n");
 
-    return -1;
+    return 1;
   }
 
-  return was_eof ? lines : -1;
+  return was_eof ? 0 : 1;
 }
 
 /**
@@ -84,6 +85,27 @@ char* tokenize_string(char* str) {
     buffer++;
   }
 
+  return token;
+}
+
+/**
+ * Trims a token by removing leading and trailing quotes, if present.
+ *
+ * @param token The token to be trimmed.
+ * @return A pointer to the trimmed token.
+ */
+char* trim_token (char* token) {
+  if (strlen(token) > 1) {
+    if (token[0] == '\"') {
+      if (token[strlen(token) - 1] == '\"') {
+        token++;
+        token[strlen(token) - 1] = '\0';
+      } else {
+        fprintf(stderr, "Error: Missing closing quote in token %s\n", token);
+        return NULL;
+      }
+    }
+  }
   return token;
 }
 
@@ -134,7 +156,7 @@ int parse_number_with_error_messages(const char* token, uint32_t* value,
   return 1;
 }
 
-enum PARSE_CSV_RESULT parse_csv(const char* filename, int* line_count,
+enum PARSE_CSV_RESULT parse_csv(const char* filename, unsigned int* line_count,
                                 struct Request** requests_out) {
   // Do basic checks to see if the file exists and is not a directory
   struct stat st;
@@ -177,10 +199,9 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, int* line_count,
 
   // Count the number of lines in the file to allocate the correct amount of
   // memory
-  *line_count = count_lines(file);
-  if (*line_count == -1) {
+  
+  if (count_lines(file, line_count)) {
     fclose(file);
-
     return PARSE_CSV_RESULT_IO_ERROR;
   }
 
@@ -200,10 +221,10 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, int* line_count,
   }
 
   // longest possible line is 33 characters long
-  //  "W",0037777777777,0037777777777\r\n
+  //  "W","0037777777777","0037777777777"\r\n
   // extra 2 characters for the null terminator
   // and to check if the line is too long
-  char buffer[35];
+  char buffer[39];
   *line_count = 0;
 
   while (fgets(buffer, sizeof(buffer), file)) {
@@ -218,7 +239,7 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, int* line_count,
     }
 
     // check if the line is too long
-    if (strlen(buffer) > 33) {
+    if (strlen(buffer) > 37) {
       fprintf(stderr,
               "Error: Too many characters encountered. Could be unnecessary "
               "white spaces (line: %d)\n",
@@ -243,11 +264,25 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, int* line_count,
     struct Request request;
 
     while (token) {
+      token = trim_token(token);
+
+      if (token == NULL) {
+        goto parse_csv_error_cleanup;
+      }
+
       // check for empty tokens
       if (strlen(token) == 0) {
+
+        // empty token is only allowed for read requests 
+        // and only at the end of the line to represent 
+        // an empty data field
+        if ((tokenize_string(NULL) == NULL) && (request.we == 0)) {
+          break;
+        }
+        
         fprintf(stderr,
                 "Error: Multiple commas in a row or a comma at the "
-                "beginning/end of a line are not allowed (line: %d)\n",
+                "beginning of a line are not allowed (line: %d)\n",
                 *line_count + 1);
 
         goto parse_csv_error_cleanup;
@@ -265,21 +300,6 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, int* line_count,
                     token[0], *line_count + 1);
 
             goto parse_csv_error_cleanup;
-          }
-
-        } else if (strlen(token) == 3) {
-          if (token[0] == '\"' && token[2] == '\"') {
-            if (token[1] == 'R' || token[1] == 'W' || token[1] == 'r' ||
-                token[1] == 'w') {
-              request.we = token[1] == 'W' || token[1] == 'w';
-            } else {
-              fprintf(stderr,
-                      "Error: Accesstype must be either W or R not '%c' (line: "
-                      "%d)\n",
-                      token[1], *line_count + 1);
-
-              goto parse_csv_error_cleanup;
-            }
           }
 
         } else {
