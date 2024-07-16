@@ -245,8 +245,6 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, int* line_count,
     while (token) {
       // check for empty tokens
       if (strlen(token) == 0) {
-        // if (token_count == 2 || !request.we) break;
-
         fprintf(stderr,
                 "Error: Multiple commas in a row or a comma at the "
                 "beginning/end of a line are not allowed (line: %d)\n",
