@@ -92,7 +92,7 @@ void run_simulation_test(SimulationTestParams params) {
   // Capture stdout (stderr is captured by death test)
   testing::internal::CaptureStdout();
 
-
+  // Run the actual simulation
   Result result = run_simulation(
     params.cycles,
     params.tlbSize,
@@ -109,14 +109,6 @@ void run_simulation_test(SimulationTestParams params) {
   testing::internal::GetCapturedStdout();
 
   // Compare results
-
-  if (params.expectGateCount) {
-    assert_with_message(
-      result.primitiveGateCount == params.expected.primitiveGateCount,
-      build_expected_msg("primitiveGateCount", params.expected.primitiveGateCount, result.primitiveGateCount)
-    );
-  }
-
   assert_with_message(
     result.cycles == params.expected.cycles,
     build_expected_msg("cycles", params.expected.cycles, result.cycles)
@@ -129,6 +121,13 @@ void run_simulation_test(SimulationTestParams params) {
     result.hits == params.expected.hits,
     build_expected_msg("hits", params.expected.hits, result.hits)
   );
+
+  if (params.expectGateCount) {
+    assert_with_message(
+      result.primitiveGateCount == params.expected.primitiveGateCount,
+      build_expected_msg("primitiveGateCount", params.expected.primitiveGateCount, result.primitiveGateCount)
+    );
+  }
 
   for (size_t i = 0; i < params.expected_data.size(); i++) {
     assert_with_message(
