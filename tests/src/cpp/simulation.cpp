@@ -71,6 +71,17 @@ struct SimulationTestParams {
  */
 class SimulationDeathTest : public testing::TestWithParam<SimulationTestParams> {};
 
+/**
+ * Returns the name of the simulation test.
+ * 
+ * Used to generate test names in the test output for parameterized tests.
+ *
+ * @param info The test parameter information.
+ * @return The name of the simulation test.
+ */
+std::string get_simulation_test_name(const testing::TestParamInfo<SimulationDeathTest::ParamType>& info) {
+  return info.param.testName;
+}
 
 /**
  * Runs a simulation test with the given parameters and asserts the results.
@@ -186,7 +197,5 @@ INSTANTIATE_TEST_SUITE_P(
       {}
     )
   ),
-  [](const testing::TestParamInfo<SimulationDeathTest::ParamType>& info) {
-    return info.param.testName;
-  }
+  get_simulation_test_name
 );
