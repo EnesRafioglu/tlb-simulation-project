@@ -43,12 +43,21 @@ set(CMAKE_C_STANDARD_REQUIRED TRUE)
 file (GLOB_RECURSE TEST_SOURCES_C CONFIGURE_DEPENDS "src/c/*.cpp")
 file (GLOB_RECURSE TEST_SOURCES_CPP CONFIGURE_DEPENDS "src/cpp/*.cpp")
 
+file (GLOB_RECURSE TEST_SOURCES_SHARED CONFIGURE_DEPENDS "src/shared/*.cpp")
+file (GLOB_RECURSE TEST_HEADERS_SHARED CONFIGURE_DEPENDS "src/shared/*.hpp")
+
 file (GLOB_RECURSE APP_SOURCES_C CONFIGURE_DEPENDS "../src/*.c")
 file (GLOB_RECURSE APP_SOURCES_CPP CONFIGURE_DEPENDS "../src/*.cpp")
 file (GLOB_RECURSE APP_HEADERS_C CONFIGURE_DEPENDS "../src/*.h")
 file (GLOB_RECURSE APP_HEADERS_CPP CONFIGURE_DEPENDS "../src/*.hpp")
 
 # Convert the list of headers to a list of include directories
+set (TEST_SHARED_INCLUDE_DIRS "")
+foreach(HEADER ${TEST_HEADERS_SHARED})
+  get_filename_component(DIR ${HEADER} DIRECTORY)
+  list(APPEND TEST_SHARED_INCLUDE_DIRS ${DIR})
+endforeach()
+
 set (APP_INCLUDE_DIRS_C "")
 foreach(HEADER ${APP_HEADERS_C})
   get_filename_component(DIR ${HEADER} DIRECTORY)
@@ -61,6 +70,7 @@ foreach(HEADER ${APP_HEADERS_CPP})
   list(APPEND APP_INCLUDE_DIRS_CPP ${DIR})
 endforeach()
 
+list(REMOVE_DUPLICATES TEST_SHARED_INCLUDE_DIRS)
 list(REMOVE_DUPLICATES APP_INCLUDE_DIRS_C)
 list(REMOVE_DUPLICATES APP_INCLUDE_DIRS_CPP)
 
@@ -71,11 +81,13 @@ list(FILTER APP_SOURCES_C EXCLUDE REGEX "main.c")
 add_executable(
   c_tests
   ${TEST_SOURCES_C}
+  ${TEST_SOURCES_SHARED}
   ${APP_SOURCES_C}
 )
 target_include_directories(
   c_tests
   PRIVATE
+  ${TEST_SHARED_INCLUDE_DIRS}
   ${APP_INCLUDE_DIRS_C}
 )
 target_link_libraries(
@@ -92,11 +104,13 @@ target_compile_definitions(
 add_executable(
   cpp_tests
   ${TEST_SOURCES_CPP}
+  ${TEST_SOURCES_SHARED}
   ${APP_SOURCES_CPP}
 )
 target_include_directories(
   cpp_tests
   PRIVATE
+  ${TEST_SHARED_INCLUDE_DIRS}
   ${APP_INCLUDE_DIRS_CPP}
 )
 target_link_libraries(
