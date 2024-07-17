@@ -20,7 +20,7 @@
  * @param file The file to be read.
  * @return 0 on success, 1 on failure.
  */
-  int count_lines(FILE* file, unsigned int* lines) {
+int count_lines(FILE* file, unsigned int* lines) {
   // Save the current position in the file
   off_t pos = ftello(file);
   if (pos == -1) {
@@ -220,7 +220,7 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, unsigned int* line_count,
     return PARSE_CSV_RESULT_PARSE_ERROR;
   }
 
-  // longest possible line is 33 characters long
+  // longest possible line is 37 characters long
   //  "W","0037777777777","0037777777777"\r\n
   // extra 2 characters for the null terminator
   // and to check if the line is too long
@@ -281,8 +281,8 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, unsigned int* line_count,
         }
         
         fprintf(stderr,
-                "Error: Multiple commas in a row or a comma at the "
-                "beginning of a line are not allowed (line: %d)\n",
+                "Error: Empty token encountered. Could be a comma at the"
+                " beginning of a line or multiple commas in a row. (line: %d)\n",
                 *line_count + 1);
 
         goto parse_csv_error_cleanup;
