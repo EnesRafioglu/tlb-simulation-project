@@ -14,9 +14,32 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  struct Configuration cnf;
-  parse_arguments(argc, argv, &cnf);
+  // Get own name
+  char* own_binary_name = "tlb";
+  if (argc > 0 && argv[0] != NULL && argv[0][0] != '\0') {
+    own_binary_name = argv[0];
+  } else {
+    fprintf(stderr, "WARN: Couldn't determine own name\n");
+  }
 
+  // Parse the command line arguments
+  struct Configuration cnf;
+  switch (parse_arguments(argc, argv, &cnf)) {
+    case PARSE_ARG_RESULT_ERROR:
+      print_usage(own_binary_name);
+
+      // 22 is the exit code for invalid arguments
+      return 22;
+    case PARSE_ARG_RESULT_HELP:
+      print_usage(own_binary_name);
+
+      // The user only wanted to see the help message -> exit successfully
+      return 0;
+    default:
+      break;
+  }
+
+  // Parse the input file
   int line_count;
   struct Request* requests;
   requests = parse_csv(cnf.inputFile, &line_count);
@@ -35,11 +58,13 @@ int main(int argc, char* argv[]) {
            req.we);
   }
 
+  // Run the simulation
   struct Result result =
       run_simulation(cnf.cycles, cnf.tlbSize, cnf.tlbLatency, cnf.blocksize,
                      cnf.v2bBlockOffset, cnf.memoryLatency, line_count,
                      requests, cnf.traceFile);
 
+  // Print the results
   printf("Simulation took %zu cycles\n", result.cycles);
   printf("Simulation had %zu misses\n", result.misses);
   printf("Simulation had %zu hits\n", result.hits);
@@ -56,6 +81,7 @@ int main(int argc, char* argv[]) {
     }
   }
 
+  // Clean up
   free(requests);
 
   return 0;
