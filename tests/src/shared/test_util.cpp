@@ -26,5 +26,5 @@ std::string build_expected_msg(std::string variableName, int expected, int got) 
 }
 
 std::string build_expected_msg_hex(std::string variableName, int expected, int got) {
-  return build_expected_msg(variableName, to_hex(expected), to_hex(got));
+  return build_expected_msg(variableName, "0x" + to_hex(expected), "0x" + to_hex(got));
 }

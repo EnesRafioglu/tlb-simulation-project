@@ -7,6 +7,9 @@
 
 #include "simulation.hpp"
 
+#define WRITE_R(address, data) Request{address, data, 1}
+#define READ_R(address) Request{address, 0, 0}
+
 /**
  * @brief Struct representing the parameters for a simulation test case.
  */
@@ -23,7 +26,7 @@ struct SimulationTestParams {
   unsigned v2bBlockOffset;
   unsigned memoryLatency;
   size_t numRequests;
-  Request* requests;
+  std::vector<Request> requests;
   const char* tracefile;
 
   /** Flag indicating whether to expect gate count. */
@@ -46,7 +49,7 @@ struct SimulationTestParams {
     unsigned v2bBlockOffset,
     unsigned memoryLatency,
     size_t numRequests,
-    Request* requests,
+    std::vector<Request> requests,
     const char* tracefile,
     bool expectGateCount,
     Result expected,
@@ -101,7 +104,10 @@ void run_simulation_test(SimulationTestParams params) {
     params.v2bBlockOffset,
     params.memoryLatency,
     params.numRequests,
-    params.requests,
+    // This might seem a little weird, but as long as the vector isn't reallocated,
+    // the pointer is valid as a C-style array.
+    // (This gurantee is not provided for every container, but it is for std::vector)
+    params.numRequests > 0 ? &(params.requests[0]) : nullptr,
     params.tracefile
   );
 
@@ -175,7 +181,7 @@ INSTANTIATE_TEST_SUITE_P(
       // Number of Requests
       0,
       // Requests
-      nullptr,
+      {},
       // Tracefile
       nullptr,
 
@@ -194,6 +200,302 @@ INSTANTIATE_TEST_SUITE_P(
       },
       // Expected Reads
       {}
+    ),
+    SimulationTestParams(
+      "SingleWriteNoLatency",
+
+      // Cycles
+      1000,
+      // TLB Size
+      4,
+      // TLB Latency
+      0,
+      // Blocksize
+      4,
+      // V2B Block Offset
+      0,
+      // Memory Latency
+      0,
+      // Number of Requests
+      1,
+      // Requests
+      {
+        WRITE_R(0x01, 0x11)
+      },
+      // Tracefile
+      nullptr,
+
+      // Expect Gate Count
+      false,
+      // Expected Result
+      Result{
+        // Cycles
+        1,
+        // Misses
+        1,
+        // Hits
+        0,
+        // Primitive Gate Count
+        0
+      },
+      // Expected Reads
+      {
+        0x11
+      }
+    ),
+    SimulationTestParams(
+      "SingleReadNoLatency",
+
+      // Cycles
+      1000,
+      // TLB Size
+      4,
+      // TLB Latency
+      0,
+      // Blocksize
+      4,
+      // V2B Block Offset
+      0,
+      // Memory Latency
+      0,
+      // Number of Requests
+      1,
+      // Requests
+      {
+        READ_R(0x01)
+      },
+      // Tracefile
+      nullptr,
+
+      // Expect Gate Count
+      false,
+      // Expected Result
+      Result{
+        // Cycles
+        1,
+        // Misses
+        1,
+        // Hits
+        0,
+        // Primitive Gate Count
+        0
+      },
+      // Expected Reads
+      {
+        0x0
+      }
+    ),
+    SimulationTestParams(
+      "SingleWriteReadNoLatency",
+
+      // Cycles
+      1000,
+      // TLB Size
+      4,
+      // TLB Latency
+      0,
+      // Blocksize
+      4,
+      // V2B Block Offset
+      0,
+      // Memory Latency
+      0,
+      // Number of Requests
+      2,
+      // Requests
+      {
+        WRITE_R(0x01, 0x11),
+        READ_R(0x01)
+      },
+      // Tracefile
+      nullptr,
+
+      // Expect Gate Count
+      false,
+      // Expected Result
+      Result{
+        // Cycles
+        2,
+        // Misses
+        1,
+        // Hits
+        1,
+        // Primitive Gate Count
+        0
+      },
+      // Expected Reads
+      {
+        0x11,
+        0x11
+      }
+    ),
+    SimulationTestParams(
+      "SingleReadWriteNoLatency",
+
+      // Cycles
+      1000,
+      // TLB Size
+      4,
+      // TLB Latency
+      0,
+      // Blocksize
+      4,
+      // V2B Block Offset
+      0,
+      // Memory Latency
+      0,
+      // Number of Requests
+      2,
+      // Requests
+      {
+        READ_R(0x01),
+        WRITE_R(0x01, 0x11)
+      },
+      // Tracefile
+      nullptr,
+
+      // Expect Gate Count
+      false,
+      // Expected Result
+      Result{
+        // Cycles
+        2,
+        // Misses
+        1,
+        // Hits
+        1,
+        // Primitive Gate Count
+        0
+      },
+      // Expected Reads
+      {
+        0x0,
+        0x11
+      }
+    ),
+    SimulationTestParams(
+      "MultipleWritesNoLatency",
+
+      // Cycles
+      1000,
+      // TLB Size
+      4,
+      // TLB Latency
+      0,
+      // Blocksize
+      16,
+      // V2B Block Offset
+      0,
+      // Memory Latency
+      0,
+      // Number of Requests
+      14,
+      // Requests
+      {
+        WRITE_R(0x01, 0x1),
+        WRITE_R(0x02, 0x2),
+        WRITE_R(0x03, 0x3),
+        WRITE_R(0x04, 0x4),
+        WRITE_R(0x05, 0x5),
+        WRITE_R(0x04, 0x6),
+        WRITE_R(0x03, 0x7),
+        WRITE_R(0x02, 0x8),
+        WRITE_R(0x01, 0x9),
+
+        READ_R(0x01),
+        READ_R(0x02),
+        READ_R(0x03),
+        READ_R(0x04),
+        READ_R(0x05),
+      },
+      // Tracefile
+      nullptr,
+
+      // Expect Gate Count
+      false,
+      // Expected Result
+      Result{
+        // Cycles
+        14,
+        // Misses
+        1,
+        // Hits
+        13,
+        // Primitive Gate Count
+        0
+      },
+      // Expected Reads
+      {
+        0x1,
+        0x2,
+        0x3,
+        0x4,
+        0x5,
+        0x6,
+        0x7,
+        0x8,
+        0x9,
+
+        0x9,
+        0x8,
+        0x7,
+        0x6,
+        0x5,
+      }
+    ),
+    SimulationTestParams(
+      "MultipleReadsNoLatency",
+
+      // Cycles
+      1000,
+      // TLB Size
+      4,
+      // TLB Latency
+      0,
+      // Blocksize
+      16,
+      // V2B Block Offset
+      0,
+      // Memory Latency
+      0,
+      // Number of Requests
+      6,
+      // Requests
+      {
+        WRITE_R(0x01, 0x11),
+
+        READ_R(0x01),
+        READ_R(0x01),
+        READ_R(0x01),
+        READ_R(0x01),
+        READ_R(0x01),
+      },
+      // Tracefile
+      nullptr,
+
+      // Expect Gate Count
+      false,
+      // Expected Result
+      Result{
+        // Cycles
+        6,
+        // Misses
+        1,
+        // Hits
+        5,
+        // Primitive Gate Count
+        0
+      },
+      // Expected Reads
+      {
+        0x11,
+
+        0x11,
+        0x11,
+        0x11,
+        0x11,
+        0x11
+      }
     )
   ),
   get_simulation_test_name
