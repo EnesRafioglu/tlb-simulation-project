@@ -43,8 +43,15 @@ private:
   //* Signals used for communication between the CPU and the MMU module
   // For documentation on the signals, see the corresponding port declarations above
 
+  // We need to use `sc_buffer` for at leas one of the channels to the MMU to
+  // trigger it's operation (sensitivity list).
+  //
+  // If we actually knew the latencies ahead of time, we wouldn't be forced to
+  // use the `mmuDone` event to signal the CPU that the operation is done.
+  // This signal is only notified after the MMU has finished it's operation, thus
+  // we need to trigger the MMU in the first place.
   sc_signal<bool> sigWriteEnabled;
-  sc_signal<sc_bv<32>> sigAddress;
+  sc_buffer<sc_bv<32>> sigAddress;
   sc_signal<sc_bv<32>> sigDataIn;
   sc_signal<sc_bv<32>> sigDataOut;
 

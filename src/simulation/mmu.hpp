@@ -79,10 +79,22 @@ private:
   sc_signal<sc_bv<32>> sigTlbPhysicalFrameNumber;
   sc_signal<bool> sigTlbFound;
 
+  // TODO: Decide if we want to use `sc_buffer` or wait for two delta cycles
+  // We need to use `sc_buffer` to retrigger the memory and MMU operation even
+  // if the signals didn't change. This is necessary because the MMU has to
+  // wait for the memory to finish before it can continue.
+  //
+  // When the `memoryLatency` is 0, we would only wait for a single delta cycle,
+  // which means that we would read from the memory output in the same delta
+  // cycle the memory writes to it -> Thus we wouldn't get the updated value.
+  //
+  // In any real-world scenario, the memory latency would be greater than 0.
+  // (Not necessarily greater than 1 in terms of actual cpu cycles, but greater
+  // than 0)
   sc_signal<bool> sigMemWriteEnabled;
-  sc_signal<sc_bv<32>> sigMemAddress;
+  sc_buffer<sc_bv<32>> sigMemAddress;
   sc_signal<sc_bv<32>> sigMemDataIn;
-  sc_signal<sc_bv<32>> sigMemDataOut;
+  sc_buffer<sc_bv<32>> sigMemDataOut;
 
 public:
   MMU(
