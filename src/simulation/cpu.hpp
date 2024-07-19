@@ -58,6 +58,16 @@ private:
 public:
   CPU(sc_module_name name, MMU* mmu, unsigned int numRequests, Request requests[]);
 
+  /**
+   * @brief Checks if the CPU is done with all it's requests.
+   *
+   * This function returns a boolean value indicating whether the CPU has
+   * finished processing all of its requests.
+   *
+   * @return True if the CPU is done with its requests, false otherwise.
+   */
+  bool isDone() const;
+
 private:
   /** @brief Method that is called on the positive edge of the clock signal.
    * 

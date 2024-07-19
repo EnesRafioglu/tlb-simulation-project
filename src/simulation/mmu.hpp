@@ -68,9 +68,9 @@ private:
   //? are the same. This is because of the TLB sensitivity list.
 
   /** Number of TLB cache hits */
-  unsigned int numHits;
+  size_t numHits;
   /** Number of TLB cache misses */
-  unsigned int numMisses;
+  size_t numMisses;
 
   //* Signals used for communication between the MMU and the TLB/Memory modules
   // For documentation on the signals, see the corresponding port declarations above
@@ -112,14 +112,14 @@ public:
    *
    * @return The number of hits in the TLB.
    */
-  unsigned int getNumHits() const;
+  size_t getNumHits() const;
 
   /**
    * @brief Returns the number of cache misses.
    *
    * @return The number of cache misses.
    */
-  unsigned int getNumMisses() const;
+  size_t getNumMisses() const;
 private:
   /** @brief Method that is called on the positive edge of the clock signal.
    * 

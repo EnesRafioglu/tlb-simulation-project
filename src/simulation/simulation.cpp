@@ -90,10 +90,15 @@ extern "C" Result run_simulation(
   std::cout << "Starting simulation with " << cycles << " cycles" << std::endl;
   sc_start(cycles, SC_NS);
 
-  const unsigned int numCycles = sc_time_stamp().value() / 1000;
+  const size_t numElapsedCycles = sc_time_stamp().value() / 1000;
 
   // Return a dummy result
-  return Result{numCycles, mmu.getNumMisses(), mmu.getNumHits(), 0};
+  return Result{
+    cpu.isDone() ? numElapsedCycles : std::numeric_limits<size_t>::max(),
+    mmu.getNumMisses(),
+    mmu.getNumHits(),
+    0,
+  };
 }
 
 // Leave this function as-is, it is required by the SystemC library but will not be used.

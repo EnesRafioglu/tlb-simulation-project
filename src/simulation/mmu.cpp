@@ -44,11 +44,11 @@ MMU::MMU(
   sensitive << address << writeEnabled << dataIn;
 }
 
-unsigned int MMU::getNumHits() const {
+size_t MMU::getNumHits() const {
   return numHits;
 }
 
-unsigned int MMU::getNumMisses() const {
+size_t MMU::getNumMisses() const {
   return numMisses;
 }
 
