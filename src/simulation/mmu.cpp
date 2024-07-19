@@ -64,7 +64,12 @@ void MMU::mmuOperation() {
 
     // Send the virtual address page to the TLB and wait for the TLB to find the physical frame
     tlbVirtualPageNumber.write(virtualPageNumber);
+
+    // Wait for tlb latency affecting the cycle count
     wait(tlbsLatency, SC_NS);
+
+    // Wait delta cycles for the real tlb latency
+    wait(sigTlbFound.default_event());
 
     // Check if the TLB found the physical frame
     const bool found = tlbFound.read();

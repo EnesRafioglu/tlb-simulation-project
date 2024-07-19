@@ -75,11 +75,12 @@ private:
   //* Signals used for communication between the MMU and the TLB/Memory modules
   // For documentation on the signals, see the corresponding port declarations above
 
-  sc_signal<sc_bv<32>> sigTlbVirtualPageNumber;
+  // For explaination on why we use `sc_buffer`, see the comment below for
+  // `sigMemAddress` etc..
+  sc_buffer<sc_bv<32>> sigTlbVirtualPageNumber;
   sc_signal<sc_bv<32>> sigTlbPhysicalFrameNumber;
-  sc_signal<bool> sigTlbFound;
+  sc_buffer<bool> sigTlbFound;
 
-  // TODO: Decide if we want to use `sc_buffer` or wait for two delta cycles
   // We need to use `sc_buffer` to retrigger the memory and MMU operation even
   // if the signals didn't change. This is necessary because the MMU has to
   // wait for the memory to finish before it can continue.
