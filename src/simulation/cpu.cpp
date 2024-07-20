@@ -69,11 +69,11 @@ void CPU::cpuOperation() {
 
       debug_log(
         "CPU",
-        "Received data 0x" << std::hex << request->data
+        "Received data 0x" << std::hex << request->data << std::dec
       );
     }
 
-    debug_log(std::string(12, '-') << "Done at: " << getNumCyclesRan() << std::string(12, '-'));
+    debug_log(std::string(12, '-') << "Done at: " << getNumCyclesRan() << std::string(12, '-') << std::endl);
 
     ++requestIndex;
     wait();

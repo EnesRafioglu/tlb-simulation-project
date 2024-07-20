@@ -71,7 +71,7 @@ void CACHELINES::cacheLinesOperation() {
 
     debug_log(
       "CacheLines",
-      "Mode: " << (writeEnabled.read() ? "Write" : "Read") << ", Index: " << std::dec << idx << std::boolalpha << ", Tags match" << (tag.read() == cacheLines[idx]->tagOut.read()) << ", initialized:" << cacheLines[idx]->isInitializedOut.read() << std::noboolalpha << std::endl
+      "Mode: " << (writeEnabled.read() ? "Write" : "Read") << ", Index: " << std::dec << idx << std::boolalpha << ", Tags match" << (tag.read() == cacheLines[idx]->tagOut.read()) << ", initialized:" << cacheLines[idx]->isInitializedOut.read() << std::noboolalpha
     );
 
     wait();
