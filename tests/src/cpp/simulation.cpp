@@ -1,8 +1,10 @@
 #include <vector>
 #include <iostream>
+#include <random>
 
 #include <gtest/gtest.h>
 
+#include "util.hpp"
 #include "test_util.hpp"
 
 #include "simulation.hpp"
@@ -38,7 +40,7 @@ struct SimulationTestParams {
    * 
    * (same order as requests, includes writes)
    */
-  std::vector<int> expected_data;
+  std::vector<uint32_t> expected_data;
 
   SimulationTestParams(
     std::string testName,
@@ -53,7 +55,7 @@ struct SimulationTestParams {
     const char* tracefile,
     bool expectGateCount,
     Result expected,
-    std::vector<int> expected_reads
+    std::vector<uint32_t> expected_reads
   ) : testName(testName),
       cycles(cycles),
       tlbSize(tlbSize),
@@ -1324,5 +1326,178 @@ INSTANTIATE_TEST_SUITE_P(
       }
     )
   ),
+  get_simulation_test_name
+);
+
+//* These tests are pseudo-randomly generated
+std::vector<SimulationTestParams> generate_random_tests(int numTests) {
+  std::vector<SimulationTestParams> tests;
+  tests.reserve(numTests);
+
+  std::uniform_int_distribution<> seedDistrib(0, std::numeric_limits<int>::max());
+  std::random_device                  rand_dev;
+  std::mt19937                        seed_rd(rand_dev());
+
+  std::uniform_int_distribution<> cyclesDistrib(1000, 1000000);
+  std::uniform_int_distribution<> numRequestsDistrib(1, 5000);
+  std::uniform_int_distribution<> numIndexBitsDistrib(1, 17);
+  std::uniform_int_distribution<> latencyDistrib(1, 1000);
+  std::uniform_int_distribution<> v2bBlockOffsetDistrib(0, 1000);
+
+  std::uniform_int_distribution<> requestTypeDistrib(0, 1);
+  std::uniform_int_distribution<> addressDistrib(0, 0xFFFFFFFF);
+  std::uniform_int_distribution<> dataDistrib(0, 0xFFFFFFFF);
+
+  for (int i = 0; i < numTests; ++i) {
+    int seed = seedDistrib(seed_rd);
+    std::mt19937 rd(seed);
+
+    int numCycles = cyclesDistrib(rd);
+    int numIndexBits = numIndexBitsDistrib(rd);
+
+    std::uniform_int_distribution<> numTagBitsDistrib(1, 32 - 2 - numIndexBits);
+    int numTagBits = numTagBitsDistrib(rd);
+
+    int numPageBits = numTagBits + numIndexBits;
+
+    assert_with_message(numPageBits <= 32, "The number of page bits is too high.");
+
+    unsigned tlbSize = 1 << numIndexBits;
+    unsigned blocksize = 1 << (32 - numPageBits);
+
+    unsigned tlbsLatency = latencyDistrib(rd);
+    unsigned memoryLatency = latencyDistrib(rd);
+
+    unsigned v2bBlockOffset = v2bBlockOffsetDistrib(rd);
+
+    size_t numRequests = numRequestsDistrib(rd);
+    std::vector<Request> requests;
+    std::vector<uint32_t> expectedData;
+    requests.reserve(numRequests);
+
+    size_t expectedCycles = 0;
+    size_t expectedMisses = 0;
+    size_t expectedHits = 0;
+
+    std::map<uint32_t, uint32_t> memory;
+    std::map<uint32_t, uint32_t> tlb;
+
+    for (size_t j = 0; j < numRequests; j++) {
+      expectedCycles += 1;
+
+      bool isWrite = requestTypeDistrib(rd);
+      uint32_t address = addressDistrib(rd);
+      uint32_t data = isWrite ? dataDistrib(rd) : 0;
+
+      // Allign the address to 32bits
+      address &= 0xFFFFFFFC;
+
+      uint32_t virtualPage = takeLeadingNBits(address, numPageBits);
+      uint32_t tlbIndex = takeTrailingNBits(virtualPage, numIndexBits);
+      uint32_t tlbTag = virtualPage >> numIndexBits;
+
+      // Check if the address is in TLB
+      bool isTLBHit = tlb.find(tlbIndex) != tlb.end() && tlb[tlbIndex] == tlbTag;
+      expectedCycles += tlbsLatency;
+
+      // Check if we weren't able to finish the TLB request
+      if (expectedCycles >= numCycles) {
+        expectedCycles = std::numeric_limits<size_t>::max();
+        numRequests = j + 1;
+
+        requests.push_back(isWrite ? WRITE_R(address / 4, data) : READ_R(address / 4));
+        expectedData.push_back(data);
+
+        break;
+      }
+
+      if (isTLBHit) {
+        expectedHits++;
+      } else {
+        expectedCycles += memoryLatency;
+        expectedMisses++;
+      }
+
+      // Update TLB
+      tlb[tlbIndex] = tlbTag;
+
+      // Calculate the physical address
+      uint32_t physicalPage = virtualPage + v2bBlockOffset;
+      uint32_t physicalAddress = (physicalPage << (32 - numPageBits)) | (address & (blocksize - 1));
+
+      // Memory access
+      expectedCycles += memoryLatency;
+
+      // Check if we weren't able to finish the TLB request
+      if (expectedCycles >= numCycles) {
+        expectedCycles = std::numeric_limits<size_t>::max();
+        numRequests = j + 1;
+
+        requests.push_back(isWrite ? WRITE_R(address / 4, data) : READ_R(address / 4));
+        expectedData.push_back(data);
+
+        break;
+      }
+      if (isWrite) {
+        memory[physicalAddress] = data;
+      } else {
+        data = memory[physicalAddress];
+      }
+
+      // Push the request
+      requests.push_back(isWrite ? WRITE_R(address / 4, data) : READ_R(address / 4));
+      expectedData.push_back(data);
+    }
+
+    // std::cout << "NumCycles: " << numCycles << ", Expected Cycles: " << expectedCycles << ", Num requests: " << numRequests << ", num TLB hits: " << expectedHits << ", BlockSize: " << blocksize << ", TLB size: " << tlbSize << ", pb: " << numPageBits << std::endl;
+
+    tests.push_back(SimulationTestParams(
+      "RandomTest_" + std::to_string(i) + "_seed__" + std::to_string(seed),
+
+      // Cycles
+      numCycles,
+      // TLB Size
+      tlbSize,
+      // TLB Latency
+      tlbsLatency,
+      // Blocksize
+      blocksize,
+      // V2B Block Offset
+      v2bBlockOffset,
+      // Memory Latency
+      memoryLatency,
+
+      // Number of Requests
+      numRequests,
+      // Requests
+      requests,
+      // Tracefile
+      nullptr,
+
+      // Expect Gate Count
+      false,
+      // Expected Result
+      Result{
+        // Cycles
+        expectedCycles,
+        // Misses
+        expectedMisses,
+        // Hits
+        expectedHits,
+        // Primitive Gate Count
+        0
+      },
+      // Expected Reads
+      expectedData
+    ));
+  }
+
+  return tests;
+}
+
+INSTANTIATE_TEST_SUITE_P(
+  SimulationGenerativeTests,
+  SimulationDeathTest,
+  testing::ValuesIn(generate_random_tests(1000)),
   get_simulation_test_name
 );
