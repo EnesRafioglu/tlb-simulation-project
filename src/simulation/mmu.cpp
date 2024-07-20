@@ -15,15 +15,17 @@ MMU::MMU(
   // Calculate the number of bits used for the page number
   // We can simplify this calculation because both virtual and physical addresses are 32 bits
   numPageBits = 32 - std::log2(blocksize);
-  
+
   // Wire up the tlb module
   tlbVirtualPageNumber(sigTlbVirtualPageNumber);
   tlbPhysicalFrameNumber(sigTlbPhysicalFrameNumber);
   tlbFound(sigTlbFound);
 
-  tlb->virtualPageNumber(sigTlbVirtualPageNumber);
-  tlb->physicalFrameNumber(sigTlbPhysicalFrameNumber);
+  tlb->pageNumberIn(sigTlbVirtualPageNumber);
+  tlb->frameNumberIn(sigTlbPhysicalFrameNumber);
   tlb->found(sigTlbFound);
+  tlb->frameNumberOut(fout);
+  tlb->we(weout);
 
   // Wire up the memory module
   memWriteEnabled(sigMemWriteEnabled);
@@ -41,7 +43,7 @@ MMU::MMU(
 
   dont_initialize();
 
-  sensitive << address << writeEnabled << dataIn;
+  sensitive << nextRequest;
 }
 
 size_t MMU::getNumHits() const {
@@ -86,7 +88,8 @@ void MMU::mmuOperation() {
       wait(memoryLatency, SC_NS);
 
       // Store the translation in the TLB for future use
-      tlb->store(virtualPageNumber, physicalFrame);
+      sigTlbPhysicalFrameNumber.write(physicalFrame);
+      sigTlbVirtualPageNumber.write(virtualPageNumber);
     } else {
       numHits++;
     }

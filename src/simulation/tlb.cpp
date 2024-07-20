@@ -1,86 +1,27 @@
 #include "tlb.hpp"
 
-#include <cmath>
+TLB::TLB(sc_module_name name, CACHELINES* cache) : sc_module(name), cache(cache), tlbsize(cache->tlbsize) {
+  //Connect all ports
+  cache->tag(tagSignal);
+  cache->index(indexSignal);
+  cache->we(we);
+  cache->frameNumber(frameNumberIn);
+  cache->found(found);
+  cache->frameNumberOut(frameNumberOut);
 
-#include "util.hpp"
-#include "logging.hpp"
-
-TLB::TLB(
-  sc_module_name name,
-  unsigned int tlbSize,
-  unsigned int blocksize
-) : sc_module(name) {
-  // Calculate the number of index bits
-  numIndexBits = std::log2(tlbSize);
-
-  // Register the TLB operation method and sensitivity list
-  SC_THREAD(tlbOperation);
-
-  sensitive << clk.pos() << virtualPageNumber;
+  SC_THREAD(update);
+  sensitive << pageNumberIn << frameNumberIn << we;
 }
 
-void TLB::store(const uint32_t virtualPage, const uint32_t physicalFrame) {
-  // Compute the cache location
-  TLB::CacheLocation location = computeLocation(virtualPage);
-
-  // Insert the cache entry into the cache
-  tlbCache[location.index] = { location.tag, physicalFrame };
-
-  debug_log(
-    "TLB",
-    "Stored virtual page 0x" << std::hex << virtualPage << " with tag 0x" << location.tag << std::dec << " and index " << location.index << " -> physical frame 0x" << physicalFrame
-  );
-}
-
-TLB::CacheLocation TLB::computeLocation(uint32_t virtualPage) const {
-  TLB::CacheLocation location;
-
-  location.index = takeTrailingNBits(virtualPage, numIndexBits);
-  virtualPage >>= numIndexBits;
-  location.tag = virtualPage;
-
-  return location;
-}
-
-void TLB::tlbOperation() {
-  // TODO: Implement real TLB cache
-
+void TLB::update() {
   while (true) {
-    // Compute the cache location
-    const TLB::CacheLocation location = computeLocation(virtualPageNumber.read().to_uint());
-
-    const auto it = tlbCache.find(location.index);
-
-    debug_log(
-      "TLB",
-      "Received virtual page 0x" << std::hex << virtualPageNumber.read() << " with tag 0x" << location.tag << std::dec << " and index " << location.index
-    );
-    if (it != tlbCache.end()) {
-      debug_log(
-        "TLB",
-        "Found cache entry with tag 0x" << it->second.tag
-      );
-    } else {
-      debug_log(
-        "TLB",
-        "No cache entry found"
-      );
-    }
-
-    // Check if the cache entry exists and if the tag matches
-    if (it != tlbCache.end() && it->second.tag == location.tag) {
-      // Found a matching physical frame -> Hit
-      physicalFrameNumber.write(it->second.frameNumber);
-      found.write(true);
-
-      debug_log("TLB", "Hit: 0x" << std::hex << it->second.frameNumber);
-    } else {
-      // No matching physical frame found -> Miss
-      found.write(false);
-
-      debug_log("TLB", "Miss");
-    }
-
     wait();
+    //calculate the amount of bits resrved for the index
+    unsigned int numIndex = std::log2(tlbsize);
+
+    //calcute the tag and index of the virtual page and pass them on to the cache
+    unsigned int vp = pageNumberIn->read().to_uint();
+    indexSignal.write(takeTrailingNBits(vp, numIndex));
+    tagSignal.write(vp >> numIndex);
   }
 }

@@ -1,93 +1,52 @@
 #pragma once
 
-#include <map>
-#include <memory>
-
 #include <systemc>
+#include <cmath>
 
-using namespace sc_core;
-using namespace sc_dt;
+#include "cachelines.hpp"
+#include "util.hpp"
 
 /**
- * @brief SystemC module representing the Translation Lookaside Buffer (TLB).
+ * @brief Wrapper of the CACHELINES Module.
  * 
- * The TLB is responsible for translating virtual pages to physical frames.
- * It contains a cache of previously translated pages for faster lookup.
- * 
- * @note This implementation uses `uint32_t` for page and frame numbers as they
- * depend on the provided configuration and their actual width is determined at
- * runtime. A real implementation would use a fixed width for these numbers.
+ * This module splits the page number into tag and index and
+ * passes it to the cache-field along with other inputs.
  */
 SC_MODULE(TLB) {
 public:
   SC_HAS_PROCESS(TLB);
 
-  /** Clock used for processing requests */
-  sc_in<bool> clk;
+  /** Input port for the virtual page number. */
+  sc_in<sc_bv<32>> pageNumberIn;
 
-  /** Page number of the virtual address that should be looked up */
-  sc_in<sc_bv<32>> virtualPageNumber;
-  /** Possibly found matching physical frame number */
-  sc_out<sc_bv<32>> physicalFrameNumber;
-  /** Signal that indicates whether a matching physical frame was found */
+  /** Input port for the frame number to be stored. */
+  sc_in<sc_bv<32>> frameNumberIn;
+
+  /** Input port for the write enable signal. */
+  sc_in<bool> we;
+
+  /** Pointer to the inner cache. */
+  CACHELINES* cache;
+
+  /** Output port for the frame number stored in the cache line. */
+  sc_out<sc_bv<32>> frameNumberOut;
+
+  /** Output port indicating whether the tag was found in the cache line. */
   sc_out<bool> found;
 
-private:
-  /**
-   * @struct CacheLocation
-   * @brief Represents a cache location with tag and index.
-   */
-  struct CacheLocation {
-    /** The tag bits of the address */
-    uint32_t tag;
-    /** The index bits of the address */
-    uint32_t index;
-  };
+  /** Signal for the tag. */
+  sc_signal<sc_bv<32>> tagSignal;
 
-  /**
-   * @struct CacheEntry
-   * @brief Represents an entry in the cache.
-   */
-  struct CacheEntry {
-    /** The tag bits of the page number this entry belongs to */
-    uint32_t tag;
-    /** The physical frame number this entry points to */
-    uint32_t frameNumber;
-  };
+  /** Signal for the index. */
+  sc_signal<sc_bv<32>> indexSignal;
 
-  // TODO: Add real TLB cache implementation using SystemC
-  /** Backing implementation of the TLB cache */
-  std::map<uint32_t, CacheEntry> tlbCache;
-
-  /** Number of index bits */
-  unsigned int numIndexBits;
+  /** Size of the TLB. */
+  unsigned tlbsize;
 
 public:
-  TLB(sc_module_name name, unsigned int tlbSize, unsigned int blocksize);
-
-  /**
-   * @brief Stores a translation from virtual page to physical frame in the TLB.
-   *
-   * @param virtualPage The page number of the virtual address to store in the TLB.
-   * @param physicalFrame The frame number of the physical address to store in the TLB.
-   */
-  void store(const uint32_t virtualPage, const uint32_t physicalFrame);
+  TLB(sc_module_name name, CACHELINES* cache);
 
 private:
-  /**
-   * @brief Computes the location of the virtual page in the TLB cache.
-   *
-   * @param virtualPage The page number of the virtual address to compute the location for.
-   * @return The location of the virtual page in the TLB cache.
-   */
-  CacheLocation computeLocation(uint32_t virtualPage) const;
-
-  /**
-   * @brief Method that is called when a new virtual page is received.
-   *
-   * This method is responsible for looking up the virtual page in the TLB.
-   * If a matching physical frame is found, it is output on the `physicalFrameNumber` port.
-   * If no matching physical frame is found, the `found` signal is set to false.
-   */
-  void tlbOperation();
+  /** Thread process that updates the TLB. */
+  void update();
 };
