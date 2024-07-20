@@ -44,11 +44,11 @@ MMU::MMU(
   sensitive << address << writeEnabled << dataIn;
 }
 
-unsigned int MMU::getNumHits() const {
+size_t MMU::getNumHits() const {
   return numHits;
 }
 
-unsigned int MMU::getNumMisses() const {
+size_t MMU::getNumMisses() const {
   return numMisses;
 }
 
@@ -64,7 +64,12 @@ void MMU::mmuOperation() {
 
     // Send the virtual address page to the TLB and wait for the TLB to find the physical frame
     tlbVirtualPageNumber.write(virtualPageNumber);
+
+    // Wait for tlb latency affecting the cycle count
     wait(tlbsLatency, SC_NS);
+
+    // Wait delta cycles for the real tlb latency
+    wait(sigTlbFound.default_event());
 
     // Check if the TLB found the physical frame
     const bool found = tlbFound.read();
@@ -98,7 +103,21 @@ void MMU::mmuOperation() {
     memAddress.write(physicalAddress);
     memWriteEnabled.write(writeEnabled.read());
     memDataIn.write(dataIn.read());
+
+    // Wait for memory latency affecting the cycle count
     wait(memoryLatency, SC_NS);
+    // Wait delta cycles for the real memory latency
+    // (normally two delta cycles as the memory module is triggered in the next delta cycle
+    //  and it's output becomes available in the deltacycle after that)
+    wait(sigMemDataOut.default_event());
+
+    // TODO: Decide which method of synchronization to use
+    // If the memory latency is 0, we need to wait for two delta cycles for
+    // the memory module to finish the operation (this doesn't affect the cycle count)
+    // if (memoryLatency == 0) {
+    //   wait(SC_ZERO_TIME);
+    //   wait(SC_ZERO_TIME);
+    // }
 
     // Read the data from the memory module and send it to the CPU
     dataOut.write(memDataOut.read());

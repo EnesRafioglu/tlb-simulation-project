@@ -10,6 +10,14 @@
 
 using namespace sc_core;
 
+/**
+ * @brief A flag indicating whether the simulation has run or not.
+ *
+ * This flag is used to keep track of whether the simulation has been executed or
+ * not to prevent multiple executions of the simulation in the same SystemC
+ * kernel instance.
+ */
+static bool didSimulationRun = false;
 
 extern "C" Result run_simulation(
   int cycles,
@@ -22,6 +30,13 @@ extern "C" Result run_simulation(
   Request requests [],
   const char* tracefile
 ) {
+  // Ensure that the simulation is only run once with any given SystemC kernel instance
+  if (didSimulationRun) {
+    std::cerr << "Simulation has already been run. Please restart the simulation environment to run another simulation." << std::endl;
+    exit(1);
+  }
+  didSimulationRun = true;
+
   #ifdef DEBUG
   std::cout << "Running simulation with the following parameters:\n";
   std::cout << "\tCycles: " << cycles << "\n";
@@ -90,10 +105,43 @@ extern "C" Result run_simulation(
   std::cout << "Starting simulation with " << cycles << " cycles" << std::endl;
   sc_start(cycles, SC_NS);
 
-  const unsigned int numCycles = sc_time_stamp().value() / 1000;
+  const size_t numElapsedCycles = sc_time_stamp().value() / 1000;
 
-  // Return a dummy result
-  return Result{numCycles, mmu.getNumMisses(), mmu.getNumHits(), 0};
+  // Return result
+  //* NOTE: We record TLB hits and misses even if the request isn't fully
+  //*       processed due to reaching the cycle limit. Our task description
+  //*       doesn't specify that we should only count hits and misses for fully
+  //*       processed requests. Counting them provides insight into TLB
+  //*       efficiency, as they still occurred. Essentially, if the TLB request
+  //*       is fully processed AND there is at least one cycle left for the result
+  //*       to propagate to the MMU, we count the hit/miss. However, if the cycle
+  //*       limit is reached during the TLB request, we don't count it.
+  //*
+  //*       The requirement for at least one cycle to still be left may seem a
+  //*       bit arbitrary. After some deliberation, we based our decision on the
+  //*       following reasoning:
+  //*         - If the cycle limit is reached during the last cycle of `tlbsLatency`,
+  //*           the response is not yet propagated and can be considered not fully
+  //*           processed by the TLB.
+  //*
+  //*         - If the cycle limit is e.g., 10 and the MMU requests the TLB within
+  //*           cycle 9 (say '9.2') with `tlbsLatency` of 1, the TLB should complete
+  //*           at 10.2, which is outside the cycle limit, even though simply checking
+  //*           10 - 9 >= 1 might suggest otherwise. This would require finer
+  //*           granularity in cycle wait times, which is out of scope for this project.
+  //*
+  //*         - Counting such a hit/miss would require checking if the remaining
+  //*           cycles are at least `tlbsLatency` long, and then incrementing the
+  //*           hit/miss counter BEFORE waiting for the latency to finish. This seems
+  //*           forced and goes against the spirit of SystemC, which ends the simulation
+  //*           when the cycle limit is reached -> counters after the delay would not
+  //*           be updated.
+  return Result{
+    cpu.isDone() ? numElapsedCycles : std::numeric_limits<size_t>::max(),
+    mmu.getNumMisses(),
+    mmu.getNumHits(),
+    0,
+  };
 }
 
 // Leave this function as-is, it is required by the SystemC library but will not be used.

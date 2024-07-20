@@ -3,7 +3,7 @@
 #include <cstdint>
 
 /**
- * Takes the leading N bits from the given value.
+ * Takes the leading (left) N bits from the given value.
  *
  * @param value The input value from which to take the leading bits.
  * @param n The number of leading bits to take.
@@ -12,7 +12,7 @@
 uint32_t takeLeadingNBits(const uint32_t value, const unsigned int n);
 
 /**
- * Takes the trailing N bits from the given value.
+ * Takes the trailing (right) N bits from the given value.
  *
  * @param value The value from which to take the trailing bits.
  * @param n The number of trailing bits to take.

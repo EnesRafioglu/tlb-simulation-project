@@ -68,21 +68,34 @@ private:
   //? are the same. This is because of the TLB sensitivity list.
 
   /** Number of TLB cache hits */
-  unsigned int numHits;
+  size_t numHits;
   /** Number of TLB cache misses */
-  unsigned int numMisses;
+  size_t numMisses;
 
   //* Signals used for communication between the MMU and the TLB/Memory modules
   // For documentation on the signals, see the corresponding port declarations above
 
-  sc_signal<sc_bv<32>> sigTlbVirtualPageNumber;
+  // For explaination on why we use `sc_buffer`, see the comment below for
+  // `sigMemAddress` etc..
+  sc_buffer<sc_bv<32>> sigTlbVirtualPageNumber;
   sc_signal<sc_bv<32>> sigTlbPhysicalFrameNumber;
-  sc_signal<bool> sigTlbFound;
+  sc_buffer<bool> sigTlbFound;
 
+  // We need to use `sc_buffer` to retrigger the memory and MMU operation even
+  // if the signals didn't change. This is necessary because the MMU has to
+  // wait for the memory to finish before it can continue.
+  //
+  // When the `memoryLatency` is 0, we would only wait for a single delta cycle,
+  // which means that we would read from the memory output in the same delta
+  // cycle the memory writes to it -> Thus we wouldn't get the updated value.
+  //
+  // In any real-world scenario, the memory latency would be greater than 0.
+  // (Not necessarily greater than 1 in terms of actual cpu cycles, but greater
+  // than 0)
   sc_signal<bool> sigMemWriteEnabled;
-  sc_signal<sc_bv<32>> sigMemAddress;
+  sc_buffer<sc_bv<32>> sigMemAddress;
   sc_signal<sc_bv<32>> sigMemDataIn;
-  sc_signal<sc_bv<32>> sigMemDataOut;
+  sc_buffer<sc_bv<32>> sigMemDataOut;
 
 public:
   MMU(
@@ -100,14 +113,14 @@ public:
    *
    * @return The number of hits in the TLB.
    */
-  unsigned int getNumHits() const;
+  size_t getNumHits() const;
 
   /**
    * @brief Returns the number of cache misses.
    *
    * @return The number of cache misses.
    */
-  unsigned int getNumMisses() const;
+  size_t getNumMisses() const;
 private:
   /** @brief Method that is called on the positive edge of the clock signal.
    * 
