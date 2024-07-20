@@ -10,6 +10,14 @@
 
 using namespace sc_core;
 
+/**
+ * @brief A flag indicating whether the simulation has run or not.
+ *
+ * This flag is used to keep track of whether the simulation has been executed or
+ * not to prevent multiple executions of the simulation in the same SystemC
+ * kernel instance.
+ */
+static bool didSimulationRun = false;
 
 extern "C" Result run_simulation(
   int cycles,
@@ -22,6 +30,13 @@ extern "C" Result run_simulation(
   Request requests [],
   const char* tracefile
 ) {
+  // Ensure that the simulation is only run once with any given SystemC kernel instance
+  if (didSimulationRun) {
+    std::cerr << "Simulation has already been run. Please restart the simulation environment to run another simulation." << std::endl;
+    exit(1);
+  }
+  didSimulationRun = true;
+
   #ifdef DEBUG
   std::cout << "Running simulation with the following parameters:\n";
   std::cout << "\tCycles: " << cycles << "\n";
@@ -92,7 +107,15 @@ extern "C" Result run_simulation(
 
   const size_t numElapsedCycles = sc_time_stamp().value() / 1000;
 
-  // Return a dummy result
+  // Return result
+  //* NOTE: We record TLB hits and misses even if the request isn't fully
+  //*       processed due to reaching the cycle limit. Our task description
+  //*       doesn't specify that we should only count hits and misses for fully
+  //*       processed requests. Counting them provides insight into TLB
+  //*       efficiency, as they still occurred. Essentially, if the TLB request
+  //*       itself doesn't exceed the cycle limit, we count the hit or miss.
+  //*       However, if the cycle limit is reached during the TLB request,
+  //*       we don't count it.
   return Result{
     cpu.isDone() ? numElapsedCycles : std::numeric_limits<size_t>::max(),
     mmu.getNumMisses(),

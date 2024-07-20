@@ -13,7 +13,7 @@ std::string to_hex(int value) {
 void assert_with_message(bool condition, std::string message) {
   if (!condition) {
     std::cerr << message << std::endl;
-    exit(1);
+    exit(127);
   }
 }
 
@@ -22,6 +22,10 @@ std::string build_expected_msg(std::string variableName, std::string expected, s
 }
 
 std::string build_expected_msg(std::string variableName, int expected, int got) {
+  return build_expected_msg(variableName, std::to_string(expected), std::to_string(got));
+}
+
+std::string build_expected_msg(std::string variableName, size_t expected, size_t got) {
   return build_expected_msg(variableName, std::to_string(expected), std::to_string(got));
 }
 

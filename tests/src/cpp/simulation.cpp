@@ -147,6 +147,81 @@ void run_simulation_test(SimulationTestParams params) {
 }
 
 /**
+ * Runs the simulation test multiple times with the given parameters.
+ *
+ * @param params The parameters for the simulation test.
+ */
+void run_simulation_multiple_times(SimulationTestParams params) {
+  // Capture stdout (stderr is captured by death test)
+  testing::internal::CaptureStdout();
+
+  for (int i = 0; i < 2; i++) {
+    run_simulation(
+      params.cycles,
+      params.tlbSize,
+      params.tlbsLatency,
+      params.blocksize,
+      params.v2bBlockOffset,
+      params.memoryLatency,
+      params.numRequests,
+      // This might seem a little weird, but as long as the vector isn't reallocated,
+      // the pointer is valid as a C-style array.
+      // (This gurantee is not provided for every container, but it is for std::vector)
+      params.numRequests > 0 ? &(params.requests[0]) : nullptr,
+      params.tracefile
+    );
+  }
+}
+
+TEST(SimulationMultipleRunsTest, CantRunSimulationMultipleTimes) {
+  SimulationTestParams params = SimulationTestParams(
+      "NoRequests",
+
+      // Cycles
+      1000,
+      // TLB Size
+      4,
+      // TLB Latency
+      1,
+      // Blocksize
+      16,
+      // V2B Block Offset
+      0,
+      // Memory Latency
+      0,
+      // Number of Requests
+      0,
+      // Requests
+      {},
+      // Tracefile
+      nullptr,
+
+      // Expect Gate Count
+      false,
+      // Expected Result
+      Result{
+        // Cycles
+        0,
+        // Misses
+        0,
+        // Hits
+        0,
+        // Primitive Gate Count
+        0
+      },
+      // Expected Reads
+      {}
+    );
+
+  
+  EXPECT_EXIT(
+    run_simulation_multiple_times(params),
+    ::testing::ExitedWithCode(1),
+    "Simulation has already been run. Please restart the simulation environment to run another simulation."
+  );
+}
+
+/**
  * Runs a simulation test with the given parameters and asserts the results.
  * 
  * We need to wrap every test in a separate subprocess to reinitialize the
