@@ -113,9 +113,29 @@ extern "C" Result run_simulation(
   //*       doesn't specify that we should only count hits and misses for fully
   //*       processed requests. Counting them provides insight into TLB
   //*       efficiency, as they still occurred. Essentially, if the TLB request
-  //*       itself doesn't exceed the cycle limit, we count the hit or miss.
-  //*       However, if the cycle limit is reached during the TLB request,
-  //*       we don't count it.
+  //*       is fully processed AND there is at least one cycle left for the result
+  //*       to propagate to the MMU, we count the hit/miss. However, if the cycle
+  //*       limit is reached during the TLB request, we don't count it.
+  //*
+  //*       The requirement for at least one cycle to still be left may seem a
+  //*       bit arbitrary. After some deliberation, we based our decision on the
+  //*       following reasoning:
+  //*         - If the cycle limit is reached during the last cycle of `tlbsLatency`,
+  //*           the response is not yet propagated and can be considered not fully
+  //*           processed by the TLB.
+  //*
+  //*         - If the cycle limit is e.g., 10 and the MMU requests the TLB within
+  //*           cycle 9 (say '9.2') with `tlbsLatency` of 1, the TLB should complete
+  //*           at 10.2, which is outside the cycle limit, even though simply checking
+  //*           10 - 9 >= 1 might suggest otherwise. This would require finer
+  //*           granularity in cycle wait times, which is out of scope for this project.
+  //*
+  //*         - Counting such a hit/miss would require checking if the remaining
+  //*           cycles are at least `tlbsLatency` long, and then incrementing the
+  //*           hit/miss counter BEFORE waiting for the latency to finish. This seems
+  //*           forced and goes against the spirit of SystemC, which ends the simulation
+  //*           when the cycle limit is reached -> counters after the delay would not
+  //*           be updated.
   return Result{
     cpu.isDone() ? numElapsedCycles : std::numeric_limits<size_t>::max(),
     mmu.getNumMisses(),
