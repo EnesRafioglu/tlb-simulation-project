@@ -1329,6 +1329,59 @@ INSTANTIATE_TEST_SUITE_P(
   get_simulation_test_name
 );
 
+INSTANTIATE_TEST_SUITE_P(
+  SimulationEdgeCaseTests,
+  SimulationDeathTest,
+  testing::Values(
+    SimulationTestParams(
+      "WriteReadTLBSize1",
+
+      // Cycles
+      1000,
+      // TLB Size
+      1,
+      // TLB Latency
+      1,
+      // Blocksize
+      16,
+      // V2B Block Offset
+      1,
+      // Memory Latency
+      1,
+      // Number of Requests
+      2,
+      // Requests
+      {
+        WRITE_R(0x01, 0x11),
+        READ_R(0x01)
+      },
+      // Tracefile
+      nullptr,
+
+      // Expect Gate Count
+      false,
+      // Expected Result
+      Result{
+        // Cycles
+        // numReq + (numReq * memLatency) + (numReq * TLBLatency) + (numTLBMiss * (memLatency + TLBWriteLatency))
+        2 + (2*1) + (2*1) + (1*(1+0)),
+        // Misses
+        1,
+        // Hits
+        1,
+        // Primitive Gate Count
+        0
+      },
+      // Expected Reads
+      {
+        0x11,
+        0x11
+      }
+    )
+  ),
+  get_simulation_test_name
+);
+
 //* These tests are pseudo-randomly generated
 struct RandomTestDistributions {
   std::uniform_int_distribution<int> cycles;

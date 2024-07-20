@@ -26,7 +26,7 @@ void TLB::tlbOperation() {
   while (true) {
     // Extract the tag and index from the page number
     sc_bv<32> tag = pageNumberIn.read().range(31, numIndexBits);
-    sc_bv<32> index = pageNumberIn.read().range(numIndexBits - 1, 0);
+    sc_bv<32> index = numIndexBits > 0 ? pageNumberIn.read().range(numIndexBits - 1, 0) : sc_bv<32>(0);
 
     // Forward the tag and index to the cache lines
     sigCacheLinesTag.write(tag);
