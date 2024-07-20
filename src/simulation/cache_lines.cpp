@@ -49,6 +49,10 @@ void CACHELINES::cacheLinesOperation() {
     size_t idx = index.read().to_uint();
 
     // Update the signals of the selected cache line
+    //? We decided for this reasonable abstraction to simulate the decoder that
+    //? selects the cache line by indexing into the cacheLines vector.
+    //?
+    //? We still count this as a decoder in the gate count.
     cacheLines[idx]->writeEnabled.write(writeEnabled.read());
 
     // Wait four delta cycles for the cache line to process the request
@@ -57,6 +61,10 @@ void CACHELINES::cacheLinesOperation() {
     }
 
     // Build the response
+    //? Same as with the decoder, we simulate a multiplexer and comparator here
+    //?
+    //? For a pure implementation, look at our reference implementation in
+    //? TLB_Design.circ (logism evolution file)
     const bool wasFound = cacheLines[idx]->isInitializedOut.read() && tag.read() == cacheLines[idx]->tagOut.read();
     frameNumberOut.write(cacheLines[idx]->frameNumberOut.read());
     found.write(wasFound);
