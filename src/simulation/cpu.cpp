@@ -28,10 +28,14 @@ CPU::CPU(
   sensitive << clk.pos();
 }
 
+bool CPU::isDone() const {
+  return requestIndex >= numRequests;
+}
+
 void CPU::cpuOperation() {
   while(true) {
     // Stop if all requests have been processed
-    if (requestIndex >= numRequests) {
+    if (isDone()) {
       sc_stop();
       return;
     }
