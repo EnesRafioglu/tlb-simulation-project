@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
   }
 
   // Parse the input file
-  int line_count;
+  unsigned int line_count;
   struct Request* requests = NULL;
   switch (parse_csv(cnf.inputFile, &line_count, &requests)) {
     case PARSE_CSV_RESULT_NO_FILE:
@@ -63,13 +63,14 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  for (int i = 0; i < line_count; i++) {
+  for (size_t i = 0; i < line_count; i++) {
     struct Request req;
     req = requests[i];
 
-    printf("Request %d: addr=%u, data=%u, we=%d\n", i, req.addr, req.data,
+    printf("Request %zu: addr=%u, data=%u, we=%d\n", i, req.addr, req.data,
            req.we);
   }
+
 
   // Run the simulation
   struct Result result =
@@ -84,12 +85,12 @@ int main(int argc, char* argv[]) {
   printf("Primitive gate count: %zu\n", result.primitiveGateCount);
 
   printf("Read requests:\n");
-  for (int i = 0; i < line_count; i++) {
+  for (size_t i = 0; i < line_count; i++) {
     struct Request req;
     req = requests[i];
 
     if (req.we == 0) {
-      printf("Request %d: addr=%u, data=%u, we=%d\n", i, req.addr, req.data,
+      printf("Request %zu: addr=%u, data=%u, we=%d\n", i, req.addr, req.data,
              req.we);
     }
   }

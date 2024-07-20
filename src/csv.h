@@ -36,5 +36,5 @@ enum PARSE_CSV_RESULT {
  * the parsed data.
  * @return The result of parsing the CSV file.
  */
-enum PARSE_CSV_RESULT parse_csv(const char* filename, int* line_count,
+enum PARSE_CSV_RESULT parse_csv(const char* filename, unsigned int* line_count,
                                 struct Request** requests);
