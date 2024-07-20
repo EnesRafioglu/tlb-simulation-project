@@ -892,6 +892,436 @@ INSTANTIATE_TEST_SUITE_P(
   ),
   get_simulation_test_name
 );
+
+// //TODO: These tests assume that the TLB has no latency for writes!
+INSTANTIATE_TEST_SUITE_P(
+  SimulationLatencyTests,
+  SimulationDeathTest,
+  testing::Values(
+    SimulationTestParams(
+      "SingleWrite",
+
+      // Cycles
+      1000,
+      // TLB Size
+      4,
+      // TLB Latency
+      11,
+      // Blocksize
+      16,
+      // V2B Block Offset
+      100,
+      // Memory Latency
+      37,
+      // Number of Requests
+      1,
+      // Requests
+      {
+        WRITE_R(0x01, 0x11)
+      },
+      // Tracefile
+      nullptr,
+
+      // Expect Gate Count
+      false,
+      // Expected Result
+      Result{
+        // Cycles
+        // numReq + (numReq * memLatency) + (numReq * TLBLatency) + (numTLBMiss * (memLatency + TLBWriteLatency))
+        1 + (1*37) + (1*11) + (1*(37+0)),
+        // Misses
+        1,
+        // Hits
+        0,
+        // Primitive Gate Count
+        0
+      },
+      // Expected Reads
+      {
+        0x11
+      }
+    ),
+    SimulationTestParams(
+      "SingleRead",
+
+      // Cycles
+      1000,
+      // TLB Size
+      4,
+      // TLB Latency
+      11,
+      // Blocksize
+      16,
+      // V2B Block Offset
+      100,
+      // Memory Latency
+      37,
+      // Number of Requests
+      1,
+      // Requests
+      {
+        READ_R(0x01)
+      },
+      // Tracefile
+      nullptr,
+
+      // Expect Gate Count
+      false,
+      // Expected Result
+      Result{
+        // Cycles
+        // numReq + (numReq * memLatency) + (numReq * TLBLatency) + (numTLBMiss * (memLatency + TLBWriteLatency))
+        1 + (1*37) + (1*11) + (1*(37+0)),
+        // Misses
+        1,
+        // Hits
+        0,
+        // Primitive Gate Count
+        0
+      },
+      // Expected Reads
+      {
+        0x0
+      }
+    ),
+    SimulationTestParams(
+      "MultipleReadsNoWrites",
+
+      // Cycles
+      1000,
+      // TLB Size
+      8,
+      // TLB Latency
+      11,
+      // Blocksize
+      32,
+      // V2B Block Offset
+      100,
+      // Memory Latency
+      37,
+      // Number of Requests
+      5,
+      // Requests
+      {
+        READ_R(0x01),
+        READ_R(0x02),
+        READ_R(0x20),
+        READ_R(0x22),
+        READ_R(0x04),
+      },
+      // Tracefile
+      nullptr,
+
+      // Expect Gate Count
+      false,
+      // Expected Result
+      Result{
+        // Cycles
+        // numReq + (numReq * memLatency) + (numReq * TLBLatency) + (numTLBMiss * (memLatency + TLBWriteLatency))
+        5 + (5*37) + (5*11) + (2*(37+0)),
+        // Misses
+        2,
+        // Hits
+        3,
+        // Primitive Gate Count
+        0
+      },
+      // Expected Reads
+      {
+        0x0,
+        0x0,
+        0x0,
+        0x0,
+        0x0
+      }
+    ),
+    SimulationTestParams(
+      "MultipleWritesNoReads",
+
+      // Cycles
+      1000,
+      // TLB Size
+      8,
+      // TLB Latency
+      11,
+      // Blocksize
+      32,
+      // V2B Block Offset
+      100,
+      // Memory Latency
+      37,
+      // Number of Requests
+      5,
+      // Requests
+      {
+        WRITE_R(0x01, 0x1),
+        WRITE_R(0x02, 0x2),
+        WRITE_R(0x20, 0x3),
+        WRITE_R(0x22, 0x4),
+        WRITE_R(0x04, 0x5),
+      },
+      // Tracefile
+      nullptr,
+
+      // Expect Gate Count
+      false,
+      // Expected Result
+      Result{
+        // Cycles
+        // numReq + (numReq * memLatency) + (numReq * TLBLatency) + (numTLBMiss * (memLatency + TLBWriteLatency))
+        5 + (5*37) + (5*11) + (2*(37+0)),
+        // Misses
+        2,
+        // Hits
+        3,
+        // Primitive Gate Count
+        0
+      },
+      // Expected Reads
+      {
+        0x1,
+        0x2,
+        0x3,
+        0x4,
+        0x5
+      }
+    ),
+    //* More complex test cases with annotations
+    SimulationTestParams(
+      "WritesAndReads",
+
+      // Cycles
+      100000,
+      // TLB Size
+      4,
+      // TLB Latency
+      7,
+      // Blocksize
+      32,
+      // V2B Block Offset
+      100,
+      // Memory Latency
+      587,
+      // Number of Requests
+      15,
+      // Requests
+      {
+        WRITE_R(0x01, 0x1), // Miss -> Index: 0, Tag: 0
+        WRITE_R(0x22, 0x2), // Miss -> Index: 0, Tag: 1
+
+        READ_R(0x01), // Miss -> Index: 0, Tag: 0
+        WRITE_R(0x22, 0x3), // Miss -> Index: 0, Tag: 1
+        READ_R(0x20), // Hit -> Index: 0, Tag: 1
+
+        WRITE_R(0xF0, 0x4), // Miss -> Index: 2, Tag: 7
+        READ_R(0x22), // Hit -> Index: 0, Tag: 1
+
+        READ_R(0x01), // Miss -> Index: 0, Tag: 0
+        WRITE_R(0xF1, 0x5), // Hit -> Index: 2, Tag: 7
+        WRITE_R(0xF8, 0x6), // Miss -> Index: 3, Tag: 7
+
+        READ_R(0x01), // Hit -> Index: 0, Tag: 0
+        READ_R(0x22), // Miss -> Index: 0, Tag: 1
+        READ_R(0xF0), // Hit -> Index: 2, Tag: 7
+        READ_R(0xF8), // Hit -> Index: 3, Tag: 7
+        READ_R(0xF1), // Hit -> Index: 2, Tag: 7
+      },
+      // Tracefile
+      nullptr,
+
+      // Expect Gate Count
+      false,
+      // Expected Result
+      Result{
+        // Cycles
+        // numReq + (numReq * memLatency) + (numReq * TLBLatency) + (numTLBMiss * (memLatency + TLBWriteLatency))
+        15 + (15*587) + (15*7) + (8*(587+0)),
+        // Misses
+        8,
+        // Hits
+        7,
+        // Primitive Gate Count
+        0
+      },
+      // Expected Reads
+      {
+        0x1,
+        0x2,
+
+        0x1,
+        0x3,
+        0x0,
+
+        0x4,
+        0x3,
+
+        0x1,
+        0x5,
+        0x6,
+
+        0x1,
+        0x3,
+        0x4,
+        0x6,
+        0x5
+      }
+    ),
+    SimulationTestParams(
+      "WritesAndReadsJustEnoughCycles",
+
+      // Cycles
+      13621,
+      // TLB Size
+      4,
+      // TLB Latency
+      7,
+      // Blocksize
+      32,
+      // V2B Block Offset
+      100,
+      // Memory Latency
+      587,
+      // Number of Requests
+      15,
+      // Requests
+      {
+        WRITE_R(0x01, 0x1), // Miss -> Index: 0, Tag: 0
+        WRITE_R(0x22, 0x2), // Miss -> Index: 0, Tag: 1
+
+        READ_R(0x01), // Miss -> Index: 0, Tag: 0
+        WRITE_R(0x22, 0x3), // Miss -> Index: 0, Tag: 1
+        READ_R(0x20), // Hit -> Index: 0, Tag: 1
+
+        WRITE_R(0xF0, 0x4), // Miss -> Index: 2, Tag: 7
+        READ_R(0x22), // Hit -> Index: 0, Tag: 1
+
+        READ_R(0x01), // Miss -> Index: 0, Tag: 0
+        WRITE_R(0xF1, 0x5), // Hit -> Index: 2, Tag: 7
+        WRITE_R(0xF8, 0x6), // Miss -> Index: 3, Tag: 7
+
+        READ_R(0x01), // Hit -> Index: 0, Tag: 0
+        READ_R(0x22), // Miss -> Index: 0, Tag: 1
+        READ_R(0xF0), // Hit -> Index: 2, Tag: 7
+        READ_R(0xF8), // Hit -> Index: 3, Tag: 7
+        READ_R(0xF1), // Hit -> Index: 2, Tag: 7
+      },
+      // Tracefile
+      nullptr,
+
+      // Expect Gate Count
+      false,
+      // Expected Result
+      Result{
+        // Cycles
+        // numReq + (numReq * memLatency) + (numReq * TLBLatency) + (numTLBMiss * (memLatency + TLBWriteLatency))
+        15 + (15*587) + (15*7) + (8*(587+0)),
+        // Misses
+        8,
+        // Hits
+        7,
+        // Primitive Gate Count
+        0
+      },
+      // Expected Reads
+      {
+        0x1,
+        0x2,
+
+        0x1,
+        0x3,
+        0x0,
+
+        0x4,
+        0x3,
+
+        0x1,
+        0x5,
+        0x6,
+
+        0x1,
+        0x3,
+        0x4,
+        0x6,
+        0x5
+      }
+    ),
+    SimulationTestParams(
+      "WritesAndReadsJustNotEnoughCycles",
+
+      // Cycles
+      13621 - 1,
+      // TLB Size
+      4,
+      // TLB Latency
+      7,
+      // Blocksize
+      32,
+      // V2B Block Offset
+      100,
+      // Memory Latency
+      587,
+      // Number of Requests
+      15,
+      // Requests
+      {
+        WRITE_R(0x01, 0x1), // Miss -> Index: 0, Tag: 0
+        WRITE_R(0x22, 0x2), // Miss -> Index: 0, Tag: 1
+
+        READ_R(0x01), // Miss -> Index: 0, Tag: 0
+        WRITE_R(0x22, 0x3), // Miss -> Index: 0, Tag: 1
+        READ_R(0x20), // Hit -> Index: 0, Tag: 1
+
+        WRITE_R(0xF0, 0x4), // Miss -> Index: 2, Tag: 7
+        READ_R(0x22), // Hit -> Index: 0, Tag: 1
+
+        READ_R(0x01), // Miss -> Index: 0, Tag: 0
+        WRITE_R(0xF1, 0x5), // Hit -> Index: 2, Tag: 7
+        WRITE_R(0xF8, 0x6), // Miss -> Index: 3, Tag: 7
+
+        READ_R(0x01), // Hit -> Index: 0, Tag: 0
+        READ_R(0x22), // Miss -> Index: 0, Tag: 1
+        READ_R(0xF0), // Hit -> Index: 2, Tag: 7
+        READ_R(0xF8), // Hit -> Index: 3, Tag: 7
+        READ_R(0xF1), // Hit -> Index: 2, Tag: 7
+      },
+      // Tracefile
+      nullptr,
+
+      // Expect Gate Count
+      false,
+      // Expected Result
+      Result{
+        // Cycles
+        // numReq + (numReq * memLatency) + (numReq * TLBLatency) + (numTLBMiss * (memLatency + TLBWriteLatency))
+        std::numeric_limits<size_t>::max(),
+        // Misses
+        8,
+        // Hits
+        7,
+        // Primitive Gate Count
+        0
+      },
+      // Expected Reads
+      {
+        0x1,
+        0x2,
+
+        0x1,
+        0x3,
+        0x0,
+
+        0x4,
+        0x3,
+
+        0x1,
+        0x5,
+        0x6,
+
+        0x1,
+        0x3,
+        0x4,
+        0x6,
+      }
     )
   ),
   get_simulation_test_name
