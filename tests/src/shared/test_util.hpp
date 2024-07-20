@@ -42,6 +42,16 @@ std::string build_expected_msg(std::string variableName, int expected, int got);
 
 /**
  * Builds an expected message string for a given variable name, expected value, and actual value.
+ *
+ * @param variableName The name of the variable.
+ * @param expected The expected value.
+ * @param got The actual value.
+ * @return The formatted expected message string.
+ */
+std::string build_expected_msg(std::string variableName, size_t expected, size_t got);
+
+/**
+ * Builds an expected message string for a given variable name, expected value, and actual value.
  * 
  * The values are formatted as hexadecimal strings.
  *
