@@ -1,27 +1,37 @@
 #include "tlb.hpp"
 
-TLB::TLB(sc_module_name name, CACHELINES* cache) : sc_module(name), cache(cache), tlbsize(cache->tlbsize) {
-  //Connect all ports
-  cache->tag(tagSignal);
-  cache->index(indexSignal);
-  cache->we(we);
-  cache->frameNumber(frameNumberIn);
-  cache->found(found);
-  cache->frameNumberOut(frameNumberOut);
+TLB::TLB(
+  sc_module_name name,
+  unsigned int tlbSize,
+  unsigned int blocksize
+) : sc_module(name), cacheLines("cache_lines", tlbSize) {
+  // Calculate the number of bits used for the index and tag
+  numIndexBits = std::log2(tlbSize);
 
-  SC_THREAD(update);
-  sensitive << pageNumberIn << frameNumberIn << we;
+  // Wire up signals
+  cacheLines.tag(sigCacheLinesTag);
+  cacheLines.index(sigCacheLinesIndex);
+  cacheLines.frameNumberIn(frameNumberIn);
+  cacheLines.writeEnabled(writeEnabled);
+  cacheLines.frameNumberOut(frameNumberOut);
+  cacheLines.found(found);
+
+  // Register the tlb operation method and sensitivity list
+  SC_THREAD(tlbOperation);
+
+  sensitive << pageNumberIn << frameNumberIn << writeEnabled;
 }
 
-void TLB::update() {
+void TLB::tlbOperation() {
   while (true) {
-    wait();
-    //calculate the amount of bits resrved for the index
-    unsigned int numIndex = std::log2(tlbsize);
+    // Extract the tag and index from the page number
+    sc_bv<32> tag = pageNumberIn.read().range(31, numIndexBits);
+    sc_bv<32> index = pageNumberIn.read().range(numIndexBits - 1, 0);
 
-    //calcute the tag and index of the virtual page and pass them on to the cache
-    unsigned int vp = pageNumberIn->read().to_uint();
-    indexSignal.write(takeTrailingNBits(vp, numIndex));
-    tagSignal.write(vp >> numIndex);
+    // Forward the tag and index to the cache lines
+    sigCacheLinesTag.write(tag);
+    sigCacheLinesIndex.write(index);
+
+    wait();
   }
 }

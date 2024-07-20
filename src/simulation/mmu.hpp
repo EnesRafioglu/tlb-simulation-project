@@ -2,7 +2,6 @@
 
 #include <systemc>
 
-#include "cachelines.hpp"
 #include "memory.hpp"
 #include "tlb.hpp"
 
@@ -30,9 +29,9 @@ public:
   sc_out<sc_bv<32>> dataOut;
 
   /** Page number of the virtual address that should be looked up */
-  sc_out<sc_bv<32>> tlbVirtualPageNumber;
+  sc_out<sc_bv<32>> tlbVirtualPageNumberIn;
   /** Possibly found matching physical frame number */
-  sc_in<sc_bv<32>> tlbPhysicalFrameNumber;
+  sc_in<sc_bv<32>> tlbPhysicalFrameNumberOut;
   /** Signal that indicates whether a matching physical frame was found */
   sc_in<bool> tlbFound;
 
@@ -44,13 +43,6 @@ public:
   sc_out<sc_bv<32>> memDataIn;
   /** Data that was read from memory */
   sc_in<sc_bv<32>> memDataOut;
-
-  /** Port that alerts the mmu whenever the next request is available */
-  sc_in<bool> nextRequest;
-
-  //? These signals wont be used, but are required because we have to bind each port
-  sc_signal<sc_bv<32>> fout;
-  sc_signal<bool> weout;
 
   /** Event that signals to the CPU that the current operation is done */
   sc_event mmuDone;
@@ -85,9 +77,11 @@ private:
 
   // For explaination on why we use `sc_buffer`, see the comment below for
   // `sigMemAddress` etc..
-  sc_buffer<sc_bv<32>> sigTlbVirtualPageNumber;
-  sc_signal<sc_bv<32>> sigTlbPhysicalFrameNumber;
+  sc_buffer<sc_bv<32>> sigTlbVirtualPageNumberIn;
+  sc_signal<sc_bv<32>> sigTlbPhysicalFrameNumberIn;
+  sc_buffer<bool> sigTlbWriteEnabled;
   sc_buffer<bool> sigTlbFound;
+  sc_signal<sc_bv<32>> sigTlbPhysicalFrameNumberOut;
 
   // We need to use `sc_buffer` to retrigger the memory and MMU operation even
   // if the signals didn't change. This is necessary because the MMU has to

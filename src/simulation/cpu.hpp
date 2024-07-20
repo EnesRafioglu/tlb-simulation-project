@@ -20,11 +20,6 @@ public:
   /** Clock used for sending requests */
   sc_in<bool> clk;
 
-  /** Signal indicating that the next request will be sent */
-  sc_signal<bool> sigNext;
-  /** The according port */
-  sc_out<bool> sendingNextRequest;
-
   /** Signal that indicates whether the current value of `dateIn` should be persisted */
   sc_out<bool> writeEnabled;
   /** Current virtual address all operations relate to */

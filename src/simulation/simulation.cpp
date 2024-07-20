@@ -7,6 +7,7 @@
 #include "memory.hpp"
 #include "mmu.hpp"
 #include "cpu.hpp"
+#include "util.hpp"
 
 using namespace sc_core;
 
@@ -83,11 +84,8 @@ extern "C" Result run_simulation(
   #endif
 
   //* Create SystemC modules
-  // Create the TLB
-  CACHELINES cache("cache",tlbSize);
-
   //Create the TLB
-  TLB tlb("tlb", &cache);
+  TLB tlb("tlb", tlbSize, blocksize);
 
   // Create the Memory
   Memory memory("memory");
@@ -106,8 +104,6 @@ extern "C" Result run_simulation(
   //* Run the simulation
   std::cout << "Starting simulation with " << cycles << " cycles" << std::endl;
   sc_start(cycles, SC_NS);
-
-  const size_t numElapsedCycles = sc_time_stamp().value() / 1000;
 
   // Return result
   //* NOTE: We record TLB hits and misses even if the request isn't fully
@@ -139,7 +135,7 @@ extern "C" Result run_simulation(
   //*           when the cycle limit is reached -> counters after the delay would not
   //*           be updated.
   return Result{
-    cpu.isDone() ? numElapsedCycles : std::numeric_limits<size_t>::max(),
+    cpu.isDone() ? getNumCyclesRan() : std::numeric_limits<size_t>::max(),
     mmu.getNumMisses(),
     mmu.getNumHits(),
     0,

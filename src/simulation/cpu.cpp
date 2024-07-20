@@ -1,6 +1,7 @@
 #include "cpu.hpp"
 
 #include "logging.hpp"
+#include "util.hpp"
 
 CPU::CPU(
   sc_module_name name,
@@ -18,9 +19,6 @@ CPU::CPU(
   mmu->address(sigAddress);
   mmu->dataIn(sigDataIn);
   mmu->dataOut(sigDataOut);
-  mmu->nextRequest(sigNext);
-
-  sendingNextRequest(sigNext);
 
   // Register the CPU operation method and sensitivity list
   SC_THREAD(cpuOperation);
@@ -43,21 +41,27 @@ void CPU::cpuOperation() {
     // Get the current request
     Request* const request = &requests[requestIndex];
 
-    debug_log(std::string(25, '+'));
+    debug_log(std::string(12, '+') << "Start at: " << getNumCyclesRan() << std::string(12, '+'));
     debug_log(
       "CPU",
-      "Processing request " << requestIndex << " with address 0x" << std::hex << request->addr << " and data 0x" << request->data
+      "Processing request " << requestIndex << " with address 0x" << std::hex << request->addr << " (" << std::dec << request->addr << std::hex << ") and data 0x" << request->data << std::dec
     );
 
     // Send the request to the MMU
     address.write(request->addr);
     dataIn.write(request->data);
     writeEnabled.write(request->we);
-    //Trigger the MMU
-    sigNext.write(!sigNext.read());
 
     // Wait for the MMU to process the request
+    debug_log(
+      "CPU",
+      "Waiting for MMU to finish operation"
+    );
     wait(mmu->mmuDone);
+    debug_log(
+      "CPU",
+      "MMU finished operation"
+    );
 
     // If the request was a read, get the data from the MMU
     if (request->we == false) {
@@ -69,7 +73,7 @@ void CPU::cpuOperation() {
       );
     }
 
-    debug_log(std::string(25, '+'));
+    debug_log(std::string(12, '-') << "Done at: " << getNumCyclesRan() << std::string(12, '-'));
 
     ++requestIndex;
     wait();
