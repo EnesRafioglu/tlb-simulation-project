@@ -8,8 +8,44 @@
 #include "mmu.hpp"
 #include "cpu.hpp"
 #include "util.hpp"
+#include "util.hpp"
 
 using namespace sc_core;
+
+size_t gateCount (unsigned tlbSize, unsigned blocksize) {
+  unsigned int numIndexBits = std::log2(tlbSize);
+  unsigned int numCachelines = tlbSize;
+  unsigned int numTagBits = 32 - numIndexBits;
+
+  unsigned int frameNumberBits = 32 - std::log2(blocksize);
+
+  // the cache line might store the tag the frameNumber and a valid bit
+  unsigned int cacheLineSize = numTagBits + frameNumberBits + 1;
+
+  size_t cacheStoreGates = numCachelines * cacheLineSize * 4;	
+  // the multiplexer is used to propagate the right cache entry.
+  // From the ERA lecture it is known that a n-Bit Mux (with two inputs)
+  // can be implemented with 3n + 1 gates. For more inputs k we can simply
+  // take k-1 Muxes (in a tree like structure). Wo we need log2(k) select
+  // bits and therefore log2(k) not gates.
+  size_t muxGates = (numCachelines - 1) * (3 * cacheLineSize) + numIndexBits;
+
+  // the decoder is used to select the right cache line with the index Bits as input
+  // decoder with n inputs has 2^n outputs. Therefore we need 2^n and gates and n not gates.
+  size_t decoderGates = (1 << numIndexBits) + numIndexBits;
+  size_t overwriteGates = decoderGates + numCachelines;
+
+  // compare the tag of the cache line with the tag of the virtual address
+  // to check if virtual address is in the tlb. Compare is a SUB operation and 
+  // a OR operation to check if the result is zero.
+  // From ERA lecture it is known that a SUB operation can be implemented with 
+  // a Full Adder (5n), where all bits of the second operand are inverted (n) 
+  // 
+  size_t comparatorGates = 6 * numTagBits + 1; 
+
+  return cacheStoreGates + muxGates + decoderGates + overwriteGates + comparatorGates;
+
+}
 
 /**
  * @brief A flag indicating whether the simulation has run or not.
@@ -84,7 +120,7 @@ extern "C" Result run_simulation(
   #endif
 
   //* Create SystemC modules
-  //Create the TLB
+  // Create the TLB
   TLB tlb("tlb", tlbSize, blocksize);
 
   // Create the Memory
@@ -136,9 +172,10 @@ extern "C" Result run_simulation(
   //*           be updated.
   return Result{
     cpu.isDone() ? getNumCyclesRan() : std::numeric_limits<size_t>::max(),
+    cpu.isDone() ? getNumCyclesRan() : std::numeric_limits<size_t>::max(),
     mmu.getNumMisses(),
     mmu.getNumHits(),
-    0,
+    gateCount(tlbSize, blocksize), 
   };
 }
 
