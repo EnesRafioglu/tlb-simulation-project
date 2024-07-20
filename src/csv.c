@@ -319,6 +319,16 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, unsigned int* line_count,
           goto parse_csv_error_cleanup;
         }
 
+        // check if the address is 32-bit aligned
+        if (request.addr & 0x3) {
+          fprintf(stderr,
+                  "Error: Address must be 32-bit aligned (line: %d)\n",
+                  *line_count + 1);
+
+          goto parse_csv_error_cleanup;
+        }
+
+
       } else if (token_count == 2) {
         // check if we is set
         if (request.we == 1) {
