@@ -121,7 +121,7 @@ extern "C" Result run_simulation(
 
   //* Create SystemC modules
   // Create the TLB
-  TLB tlb("tlb", tlbSize, blocksize);
+  TLB tlb("tlb", tlbSize);
 
   // Create the Memory
   Memory memory("memory");

@@ -2,8 +2,7 @@
 
 TLB::TLB(
   sc_module_name name,
-  unsigned int tlbSize,
-  unsigned int blocksize
+  unsigned int tlbSize
 ) : sc_module(name), cacheLines("cache_lines", tlbSize) {
   // Calculate the number of bits used for the index and tag
   numIndexBits = std::log2(tlbSize);

@@ -48,8 +48,6 @@ public:
   sc_event mmuDone;
 
 private:
-  /** Translation Lookaside Buffer used by the MMU */
-  TLB* tlb;
 
   /** Offset for virtual to block address translation */
   unsigned int v2bBlockOffset;

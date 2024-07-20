@@ -51,7 +51,7 @@ private:
   int numIndexBits;
 
 public:
-  TLB(sc_module_name name, unsigned int tlbSize, unsigned int blocksize);
+  TLB(sc_module_name name, unsigned int tlbSize);
 
 private:
   /** @brief Method that is called when a signal on the sensitivity list changes.

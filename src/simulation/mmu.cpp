@@ -11,7 +11,7 @@ MMU::MMU(
   unsigned int v2bBlockOffset,
   unsigned int tlbsLatency,
   unsigned int memoryLatency
-) : sc_module(name), tlb(tlb), v2bBlockOffset(v2bBlockOffset), tlbsLatency(tlbsLatency), memoryLatency(memoryLatency), numHits(0), numMisses(0) {
+) : sc_module(name), v2bBlockOffset(v2bBlockOffset), tlbsLatency(tlbsLatency), memoryLatency(memoryLatency), numHits(0), numMisses(0) {
   // Calculate the number of bits used for the page number
   // We can simplify this calculation because both virtual and physical addresses are 32 bits
   numPageBits = 32 - std::log2(blocksize);
