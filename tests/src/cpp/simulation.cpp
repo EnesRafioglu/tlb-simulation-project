@@ -1577,16 +1577,6 @@ std::vector<SimulationTestParams> generate_random_tests(const std::string& baseN
   std::random_device rand_dev;
   std::mt19937 seed_rd(rand_dev());
 
-  std::uniform_int_distribution<> cyclesDistrib(1000, 1000000);
-  std::uniform_int_distribution<> numRequestsDistrib(1, 5000);
-  std::uniform_int_distribution<> numIndexBitsDistrib(1, 17);
-  std::uniform_int_distribution<> latencyDistrib(1, 1000);
-  std::uniform_int_distribution<> v2bBlockOffsetDistrib(0, 1000);
-
-  std::uniform_int_distribution<> requestTypeDistrib(0, 1);
-  std::uniform_int_distribution<> addressDistrib(0, 0xFFFFFFFF);
-  std::uniform_int_distribution<> dataDistrib(0, 0xFFFFFFFF);
-
   for (int i = 0; i < numTests; ++i) {
     int seed = seedDistrib(seed_rd);
 
@@ -1602,6 +1592,12 @@ std::vector<SimulationTestParams> generate_random_tests(const std::string& baseN
   }
 
   return tests;
+}
+
+SimulationTestParams generate_specific_random_test(const std::string& baseName, int seed, RandomTestDistributions distributions) {
+  std::string name = baseName + "__seed__" + std::to_string(seed);
+
+  return generate_random_test(name, seed, distributions);
 }
 
 INSTANTIATE_TEST_SUITE_P(
@@ -1634,3 +1630,34 @@ INSTANTIATE_TEST_SUITE_P(
   ),
   get_simulation_test_name
 );
+
+// INSTANTIATE_TEST_SUITE_P(
+//   SimulationSpecificGenerativeTest,
+//   SimulationDeathTest,
+//   testing::Values(
+//     generate_specific_random_test(
+//       "SpecificTest",
+//       1475551957,
+//       RandomTestDistributions(
+//         // Cycles
+//         std::uniform_int_distribution<>(1000, 1000000),
+//         // Number of Index Bits (TLB Size)
+//         // Tag bits are dynamically calculated with a distribution over [0, 32 - 2 - numIndexBits]
+//         std::uniform_int_distribution<>(1, 17),
+//         // TLB Latency
+//         std::uniform_int_distribution<>(1, 1000),
+//         // V2B Block Offset
+//         std::uniform_int_distribution<>(0, 1000),
+//         // Number of Requests
+//         std::uniform_int_distribution<>(1, 5000),
+//         // Request Type
+//         std::uniform_int_distribution<>(0, 1),
+//         // Address
+//         std::uniform_int_distribution<>(0, 0xFFFFFFFF),
+//         // Data
+//         std::uniform_int_distribution<>(0, 0xFFFFFFFF)
+//       )
+//     )
+//   ),
+//   get_simulation_test_name
+// );
