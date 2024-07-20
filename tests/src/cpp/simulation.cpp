@@ -1330,13 +1330,199 @@ INSTANTIATE_TEST_SUITE_P(
 );
 
 //* These tests are pseudo-randomly generated
-std::vector<SimulationTestParams> generate_random_tests(int numTests) {
+struct RandomTestDistributions {
+  std::uniform_int_distribution<int> cycles;
+  std::uniform_int_distribution<int> numIndexBits;
+  std::uniform_int_distribution<int> latency;
+  std::uniform_int_distribution<int> v2bBlockOffset;
+  std::uniform_int_distribution<int> numRequests;
+  std::uniform_int_distribution<int> requestType;
+  std::uniform_int_distribution<int> address;
+  std::uniform_int_distribution<int> data;
+
+  RandomTestDistributions(
+    std::uniform_int_distribution<int> cyclesDistrib,
+    std::uniform_int_distribution<int> numIndexBitsDistrib,
+    std::uniform_int_distribution<int> latencyDistrib,
+    std::uniform_int_distribution<int> v2bBlockOffsetDistrib,
+    std::uniform_int_distribution<int> numRequestsDistrib,
+    std::uniform_int_distribution<int> requestTypeDistrib,
+    std::uniform_int_distribution<int> addressDistrib,
+    std::uniform_int_distribution<int> dataDistrib
+  ) :
+    cycles(cyclesDistrib),
+    numIndexBits(numIndexBitsDistrib),
+    latency(latencyDistrib),
+    v2bBlockOffset(v2bBlockOffsetDistrib),
+    numRequests(numRequestsDistrib),
+    requestType(requestTypeDistrib),
+    address(addressDistrib),
+    data(dataDistrib)
+  {}
+};
+
+SimulationTestParams generate_random_test(const std::string& name, int seed, RandomTestDistributions& distributions) {
+  // Initialize the random number generator
+  std::mt19937 rd(seed);
+
+  // Calculate bit lengths
+  int numCycles = distributions.cycles(rd);
+  int numIndexBits = distributions.numIndexBits(rd);
+
+  std::uniform_int_distribution<> numTagBitsDistrib(0, 32 - 2 - numIndexBits);
+  int numTagBits = numTagBitsDistrib(rd);
+
+  int numPageBits = numTagBits + numIndexBits;
+
+  assert_with_message(numPageBits <= 32, "The number of page bits is too high.");
+
+  // Calculate the block size and TLB size from bit lengths
+  unsigned tlbSize = 1 << numIndexBits;
+  unsigned blocksize = 1 << (32 - numPageBits);
+
+  // Generate latencies and offsets
+  unsigned tlbsLatency = distributions.latency(rd);
+  unsigned memoryLatency = distributions.latency(rd);
+  unsigned v2bBlockOffset = distributions.v2bBlockOffset(rd);
+
+  // Generate the requests
+  size_t numRequests = distributions.numRequests(rd);
+  std::vector<Request> requests;
+  std::vector<uint32_t> expectedData;
+  requests.reserve(numRequests);
+
+  size_t expectedCycles = 0;
+  size_t expectedMisses = 0;
+  size_t expectedHits = 0;
+  bool expectTimeout = false;
+
+  std::map<uint32_t, uint32_t> memory;
+  std::map<uint32_t, uint32_t> tlb;
+
+  for (size_t j = 0; j < numRequests; j++) {
+    // Every request needs at least 1 base cycle (CPU high clock)
+    expectedCycles += 1;
+
+    // Generate the basic request data
+    bool isWrite = distributions.requestType(rd);
+    uint32_t address = distributions.address(rd);
+    uint32_t data = isWrite ? distributions.data(rd) : 0;
+
+    // Allign the address to 32bits
+    address &= 0xFFFFFFFC;
+
+    // Calculate address parts
+    uint32_t virtualPage = takeLeadingNBits(address, numPageBits);
+    uint32_t tlbIndex = takeTrailingNBits(virtualPage, numIndexBits);
+    uint32_t tlbTag = virtualPage >> numIndexBits;
+
+    // Forwards declaration to be able to jump to the end of the loop
+    uint32_t physicalPage;
+    uint32_t physicalAddress;
+
+    // Check if the address is in TLB
+    bool isTLBHit = tlb.find(tlbIndex) != tlb.end() && tlb[tlbIndex] == tlbTag;
+    expectedCycles += tlbsLatency;
+
+    // Check if we weren't able to finish the TLB request
+    if (expectedCycles >= numCycles) {
+      expectTimeout = true;
+
+      goto generate_random_test_done;
+    }
+
+    if (isTLBHit) {
+      expectedHits++;
+    } else {
+      expectedCycles += memoryLatency;
+      expectedMisses++;
+    }
+
+    // Update TLB
+    tlb[tlbIndex] = tlbTag;
+
+    // Calculate the physical address
+    physicalPage = virtualPage + v2bBlockOffset;
+    physicalAddress = (physicalPage << (32 - numPageBits)) | (address & (blocksize - 1));
+
+    // Memory access
+    expectedCycles += memoryLatency;
+
+    // Check if we weren't able to finish the TLB request
+    if (expectedCycles >= numCycles) {
+      expectTimeout = true;
+
+      goto generate_random_test_done;
+    }
+
+    // Save result of memory access
+    if (isWrite) {
+      memory[physicalAddress] = data;
+    } else {
+      data = memory[physicalAddress];
+    }
+
+    // Push the request
+generate_random_test_done:
+    requests.push_back(isWrite ? WRITE_R(address / 4, data) : READ_R(address / 4));
+    expectedData.push_back(data);
+  }
+
+  // Check if we weren't able to finish all requests
+  if (expectTimeout) {
+    expectedCycles = std::numeric_limits<size_t>::max();
+  }
+
+  // std::cout << "NumCycles: " << numCycles << ", Expected Cycles: " << expectedCycles << ", Num requests: " << numRequests << ", num TLB hits: " << expectedHits << ", BlockSize: " << blocksize << ", TLB size: " << tlbSize << ", pb: " << numPageBits << std::endl;
+
+  return SimulationTestParams(
+    name,
+
+    // Cycles
+    numCycles,
+    // TLB Size
+    tlbSize,
+    // TLB Latency
+    tlbsLatency,
+    // Blocksize
+    blocksize,
+    // V2B Block Offset
+    v2bBlockOffset,
+    // Memory Latency
+    memoryLatency,
+
+    // Number of Requests
+    numRequests,
+    // Requests
+    requests,
+    // Tracefile
+    nullptr,
+
+    // Expect Gate Count
+    false,
+    // Expected Result
+    Result{
+      // Cycles
+      expectedCycles,
+      // Misses
+      expectedMisses,
+      // Hits
+      expectedHits,
+      // Primitive Gate Count
+      0
+    },
+    // Expected Reads
+    expectedData
+  );
+}
+
+std::vector<SimulationTestParams> generate_random_tests(const std::string& baseName, int numTests, RandomTestDistributions distributions) {
   std::vector<SimulationTestParams> tests;
   tests.reserve(numTests);
 
   std::uniform_int_distribution<> seedDistrib(0, std::numeric_limits<int>::max());
-  std::random_device                  rand_dev;
-  std::mt19937                        seed_rd(rand_dev());
+  std::random_device rand_dev;
+  std::mt19937 seed_rd(rand_dev());
 
   std::uniform_int_distribution<> cyclesDistrib(1000, 1000000);
   std::uniform_int_distribution<> numRequestsDistrib(1, 5000);
@@ -1350,146 +1536,16 @@ std::vector<SimulationTestParams> generate_random_tests(int numTests) {
 
   for (int i = 0; i < numTests; ++i) {
     int seed = seedDistrib(seed_rd);
-    std::mt19937 rd(seed);
 
-    int numCycles = cyclesDistrib(rd);
-    int numIndexBits = numIndexBitsDistrib(rd);
+    std::string name = baseName + "_" + std::to_string(i) + "_seed__" + std::to_string(seed);
 
-    std::uniform_int_distribution<> numTagBitsDistrib(1, 32 - 2 - numIndexBits);
-    int numTagBits = numTagBitsDistrib(rd);
-
-    int numPageBits = numTagBits + numIndexBits;
-
-    assert_with_message(numPageBits <= 32, "The number of page bits is too high.");
-
-    unsigned tlbSize = 1 << numIndexBits;
-    unsigned blocksize = 1 << (32 - numPageBits);
-
-    unsigned tlbsLatency = latencyDistrib(rd);
-    unsigned memoryLatency = latencyDistrib(rd);
-
-    unsigned v2bBlockOffset = v2bBlockOffsetDistrib(rd);
-
-    size_t numRequests = numRequestsDistrib(rd);
-    std::vector<Request> requests;
-    std::vector<uint32_t> expectedData;
-    requests.reserve(numRequests);
-
-    size_t expectedCycles = 0;
-    size_t expectedMisses = 0;
-    size_t expectedHits = 0;
-
-    std::map<uint32_t, uint32_t> memory;
-    std::map<uint32_t, uint32_t> tlb;
-
-    for (size_t j = 0; j < numRequests; j++) {
-      expectedCycles += 1;
-
-      bool isWrite = requestTypeDistrib(rd);
-      uint32_t address = addressDistrib(rd);
-      uint32_t data = isWrite ? dataDistrib(rd) : 0;
-
-      // Allign the address to 32bits
-      address &= 0xFFFFFFFC;
-
-      uint32_t virtualPage = takeLeadingNBits(address, numPageBits);
-      uint32_t tlbIndex = takeTrailingNBits(virtualPage, numIndexBits);
-      uint32_t tlbTag = virtualPage >> numIndexBits;
-
-      // Check if the address is in TLB
-      bool isTLBHit = tlb.find(tlbIndex) != tlb.end() && tlb[tlbIndex] == tlbTag;
-      expectedCycles += tlbsLatency;
-
-      // Check if we weren't able to finish the TLB request
-      if (expectedCycles >= numCycles) {
-        expectedCycles = std::numeric_limits<size_t>::max();
-        numRequests = j + 1;
-
-        requests.push_back(isWrite ? WRITE_R(address / 4, data) : READ_R(address / 4));
-        expectedData.push_back(data);
-
-        break;
-      }
-
-      if (isTLBHit) {
-        expectedHits++;
-      } else {
-        expectedCycles += memoryLatency;
-        expectedMisses++;
-      }
-
-      // Update TLB
-      tlb[tlbIndex] = tlbTag;
-
-      // Calculate the physical address
-      uint32_t physicalPage = virtualPage + v2bBlockOffset;
-      uint32_t physicalAddress = (physicalPage << (32 - numPageBits)) | (address & (blocksize - 1));
-
-      // Memory access
-      expectedCycles += memoryLatency;
-
-      // Check if we weren't able to finish the TLB request
-      if (expectedCycles >= numCycles) {
-        expectedCycles = std::numeric_limits<size_t>::max();
-        numRequests = j + 1;
-
-        requests.push_back(isWrite ? WRITE_R(address / 4, data) : READ_R(address / 4));
-        expectedData.push_back(data);
-
-        break;
-      }
-      if (isWrite) {
-        memory[physicalAddress] = data;
-      } else {
-        data = memory[physicalAddress];
-      }
-
-      // Push the request
-      requests.push_back(isWrite ? WRITE_R(address / 4, data) : READ_R(address / 4));
-      expectedData.push_back(data);
-    }
-
-    // std::cout << "NumCycles: " << numCycles << ", Expected Cycles: " << expectedCycles << ", Num requests: " << numRequests << ", num TLB hits: " << expectedHits << ", BlockSize: " << blocksize << ", TLB size: " << tlbSize << ", pb: " << numPageBits << std::endl;
-
-    tests.push_back(SimulationTestParams(
-      "RandomTest_" + std::to_string(i) + "_seed__" + std::to_string(seed),
-
-      // Cycles
-      numCycles,
-      // TLB Size
-      tlbSize,
-      // TLB Latency
-      tlbsLatency,
-      // Blocksize
-      blocksize,
-      // V2B Block Offset
-      v2bBlockOffset,
-      // Memory Latency
-      memoryLatency,
-
-      // Number of Requests
-      numRequests,
-      // Requests
-      requests,
-      // Tracefile
-      nullptr,
-
-      // Expect Gate Count
-      false,
-      // Expected Result
-      Result{
-        // Cycles
-        expectedCycles,
-        // Misses
-        expectedMisses,
-        // Hits
-        expectedHits,
-        // Primitive Gate Count
-        0
-      },
-      // Expected Reads
-      expectedData
-    ));
+    tests.push_back(
+      generate_random_test(
+        name,
+        seed,
+        distributions
+      )
+    );
   }
 
   return tests;
@@ -1498,6 +1554,30 @@ std::vector<SimulationTestParams> generate_random_tests(int numTests) {
 INSTANTIATE_TEST_SUITE_P(
   SimulationGenerativeTests,
   SimulationDeathTest,
-  testing::ValuesIn(generate_random_tests(1000)),
+  testing::ValuesIn(
+    generate_random_tests(
+      "TotallyRandom",
+      150,
+      RandomTestDistributions(
+        // Cycles
+        std::uniform_int_distribution<>(1000, 1000000),
+        // Number of Index Bits (TLB Size)
+        // Tag bits are dynamically calculated with a distribution over [0, 32 - 2 - numIndexBits]
+        std::uniform_int_distribution<>(1, 17),
+        // TLB Latency
+        std::uniform_int_distribution<>(1, 1000),
+        // V2B Block Offset
+        std::uniform_int_distribution<>(0, 1000),
+        // Number of Requests
+        std::uniform_int_distribution<>(1, 5000),
+        // Request Type
+        std::uniform_int_distribution<>(0, 1),
+        // Address
+        std::uniform_int_distribution<>(0, 0xFFFFFFFF),
+        // Data
+        std::uniform_int_distribution<>(0, 0xFFFFFFFF)
+      )
+    )
+  ),
   get_simulation_test_name
 );
