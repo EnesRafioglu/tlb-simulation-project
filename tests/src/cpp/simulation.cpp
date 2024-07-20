@@ -7,8 +7,8 @@
 
 #include "simulation.hpp"
 
-#define WRITE_R(address, data) Request{address, data, 1}
-#define READ_R(address) Request{address, 0, 0}
+#define WRITE_R(address, data) Request{address * 4, data, 1}
+#define READ_R(address) Request{address * 4, 0, 0}
 
 /**
  * @brief Struct representing the parameters for a simulation test case.
@@ -248,7 +248,7 @@ INSTANTIATE_TEST_SUITE_P(
       // TLB Latency
       1,
       // Blocksize
-      4,
+      16,
       // V2B Block Offset
       0,
       // Memory Latency
@@ -286,7 +286,7 @@ INSTANTIATE_TEST_SUITE_P(
       // TLB Latency
       0,
       // Blocksize
-      4,
+      16,
       // V2B Block Offset
       0,
       // Memory Latency
@@ -328,7 +328,7 @@ INSTANTIATE_TEST_SUITE_P(
       // TLB Latency
       0,
       // Blocksize
-      4,
+      16,
       // V2B Block Offset
       0,
       // Memory Latency
@@ -370,7 +370,7 @@ INSTANTIATE_TEST_SUITE_P(
       // TLB Latency
       0,
       // Blocksize
-      4,
+      16,
       // V2B Block Offset
       0,
       // Memory Latency
@@ -414,7 +414,7 @@ INSTANTIATE_TEST_SUITE_P(
       // TLB Latency
       0,
       // Blocksize
-      4,
+      16,
       // V2B Block Offset
       0,
       // Memory Latency
@@ -467,10 +467,10 @@ INSTANTIATE_TEST_SUITE_P(
       14,
       // Requests
       {
-        WRITE_R(0x01, 0x1),
+        WRITE_R(0x01, 0x1), // Miss -> index: 0
         WRITE_R(0x02, 0x2),
         WRITE_R(0x03, 0x3),
-        WRITE_R(0x04, 0x4),
+        WRITE_R(0x04, 0x4), // Miss -> index: 1
         WRITE_R(0x05, 0x5),
         WRITE_R(0x04, 0x6),
         WRITE_R(0x03, 0x7),
@@ -493,9 +493,9 @@ INSTANTIATE_TEST_SUITE_P(
         // Cycles
         14,
         // Misses
-        1,
+        2,
         // Hits
-        13,
+        12,
         // Primitive Gate Count
         0
       },
