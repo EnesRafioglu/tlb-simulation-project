@@ -4,6 +4,7 @@
 
 #include "mmu.hpp"
 #include "../shared_types.h"
+#include "util.hpp"
 
 using namespace sc_core;
 using namespace sc_dt;
@@ -55,8 +56,11 @@ private:
   sc_signal<sc_bv<32>> sigDataIn;
   sc_signal<sc_bv<32>> sigDataOut;
 
+  /** CaptureStream used for capturing the stdout of the simulation */
+  CaptureStream& captureStdout;
+
 public:
-  CPU(sc_module_name name, MMU* mmu, unsigned int numRequests, Request requests[]);
+  CPU(sc_module_name name, MMU* mmu, unsigned int numRequests, Request requests[], CaptureStream& captureStdout);
 
   /**
    * @brief Checks if the CPU is done with all it's requests.

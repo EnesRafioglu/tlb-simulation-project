@@ -119,6 +119,11 @@ extern "C" Result run_simulation(
   std::cout << "\n" << std::endl;
   #endif
 
+  //* Setup stdout capture
+  // This allows us to capture the annoying
+  // "Info: /OSCI/SystemC: Simulation stopped by user."
+  CaptureStream captureStdout(std::cout, false);
+
   //* Create SystemC modules
   // Create the TLB
   TLB tlb("tlb", tlbSize);
@@ -130,7 +135,7 @@ extern "C" Result run_simulation(
   MMU mmu("mmu", &tlb, &memory, blocksize, v2bBlockOffset, tlbsLatency, memoryLatency);
 
   // Create the CPU
-  CPU cpu("cpu", &mmu, numRequests, requests);
+  CPU cpu("cpu", &mmu, numRequests, requests, captureStdout);
 
   //* Wire up the SystemC modules
   sc_clock clk("clk", sc_time(1, SC_NS));
@@ -140,6 +145,11 @@ extern "C" Result run_simulation(
   //* Run the simulation
   std::cout << "Starting simulation with " << cycles << " cycles" << std::endl;
   sc_start(cycles, SC_NS);
+  
+  //? `sc_stop` asynchroniously stops the simulation. This means that the stdout
+  //? messages might not be printed before the CPU returns. To prevent this, we
+  //? stop capturing the stdout after the simulation has definitely stopped.
+  captureStdout.stop();
 
   // Return result
   //* NOTE: We record TLB hits and misses even if the request isn't fully

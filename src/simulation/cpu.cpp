@@ -7,8 +7,9 @@ CPU::CPU(
   sc_module_name name,
   MMU* mmu,
   unsigned int numRequests,
-  Request* requests
-) : sc_module(name), mmu(mmu), numRequests(numRequests), requests(requests), requestIndex(0) {
+  Request* requests,
+  CaptureStream& captureStdout
+) : sc_module(name), mmu(mmu), numRequests(numRequests), requests(requests), requestIndex(0), captureStdout(captureStdout) {
   // Wire up the mmu module
   writeEnabled(sigWriteEnabled);
   address(sigAddress);
@@ -34,7 +35,12 @@ void CPU::cpuOperation() {
   while(true) {
     // Stop if all requests have been processed
     if (isDone()) {
+      captureStdout.start();
       sc_stop();
+
+      //? For explanation of why we don't stop the stdout capture immediately,
+      //? see the comment in the simulation.cpp file right under `sc_start(...)`.
+
       return;
     }
 
