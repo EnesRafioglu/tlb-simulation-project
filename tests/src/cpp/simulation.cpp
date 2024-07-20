@@ -573,6 +573,56 @@ INSTANTIATE_TEST_SUITE_P(
       }
     ),
     SimulationTestParams(
+      "MultipleReadsNoWritesNoLatency",
+
+      // Cycles
+      1000,
+      // TLB Size
+      4,
+      // TLB Latency
+      0,
+      // Blocksize
+      16,
+      // V2B Block Offset
+      0,
+      // Memory Latency
+      0,
+      // Number of Requests
+      5,
+      // Requests
+      {
+        READ_R(0x01),
+        READ_R(0x02),
+        READ_R(0x01),
+        READ_R(0x02),
+        READ_R(0x01),
+      },
+      // Tracefile
+      nullptr,
+
+      // Expect Gate Count
+      false,
+      // Expected Result
+      Result{
+        // Cycles
+        5,
+        // Misses
+        1,
+        // Hits
+        4,
+        // Primitive Gate Count
+        0
+      },
+      // Expected Reads
+      {
+        0x0,
+        0x0,
+        0x0,
+        0x0,
+        0x0
+      }
+    ),
+    SimulationTestParams(
       "JustEnoughCycles",
 
       // Cycles
