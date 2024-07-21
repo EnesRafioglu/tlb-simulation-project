@@ -12,12 +12,18 @@
 #include <ctime>
 #include <iomanip>
 
+//? Log to std::cout in normal mode, log to std::cerr in testing mode
+#ifndef IS_TESTING
+#define _DEBUG_OUT_STREAM std::cout
+#else
+#define _DEBUG_OUT_STREAM std::cerr
+#endif
 
 #define _debug_log_impl(message) {                                                               \
   const time_t current_time = std::time(nullptr);                                               \
   const tm* local_time = std::localtime(&current_time);                                         \
                                                                                                 \
-  std::cout << std::put_time(local_time, "%Y-%m-%d %H:%M:%S") << " - " << message << std::endl; \
+  _DEBUG_OUT_STREAM << std::put_time(local_time, "%Y-%m-%d %H:%M:%S") << " - " << message << std::endl; \
 }
 #define _debug_log_scope_impl(scope, message) _debug_log_impl("[" << scope << "] " << message)
 
@@ -27,6 +33,8 @@
 
 #define _debug_log_impl(message)
 #define _debug_log_scope_impl(scope, message)
+
+#undef _DEBUG_OUT_STREAM
 
 #endif
 
