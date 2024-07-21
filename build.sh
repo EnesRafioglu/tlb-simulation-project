@@ -3,7 +3,7 @@
 set -e
 
 # Build in release mode
-ls "$SYSTEMC_HOME"
+ls ../systemc
 # make release
 
 printf "\n\n***Build successful***\n\n"
