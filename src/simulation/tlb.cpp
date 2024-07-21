@@ -6,7 +6,7 @@ TLB::TLB(
   sc_trace_file* vcdTraceFile
 ) : sc_module(name), cacheLines("cache_lines", tlbSize, vcdTraceFile) {
   // Calculate the number of bits used for the index and tag
-  numIndexBits = std::log2(tlbSize);
+  numIndexBits = tlbSize > 0 ? std::log2(tlbSize) : 0;
 
   // Wire up signals
   cacheLines.tag(sigCacheLinesTag);

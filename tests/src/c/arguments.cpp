@@ -204,13 +204,16 @@ TEST_F(ParseArgumentsTest, ArgCyclesLongEquals) {
 TEST_F(ParseArgumentsTest, ArgCyclesZero) {
   struct Configuration cnf;
   char* argv[] = {(char*)"./sim", (char*)"--cycles=0", (char*)"file.csv"};
-  EXPECT_EQ(PARSE_ARG_RESULT_ERROR, parse_arguments(3, argv, &cnf));
+  EXPECT_EQ(PARSE_ARG_RESULT_SUCCESS, parse_arguments(3, argv, &cnf));
+
+  // Check configuration
+  EXPECT_EQ(cnf.cycles, 0);
 
   // Check error message
   std::string output = testing::internal::GetCapturedStdout();
   std::string error = testing::internal::GetCapturedStderr();
   EXPECT_EQ(output, "");
-  EXPECT_EQ(error, "Error: cycles must be greater than or equal to 1\n\n");
+  EXPECT_EQ(error, "WARN: cycles is set to zero, simulation will not run\n");
 }
 
 TEST_F(ParseArgumentsTest, ArgCyclesNegative) {
@@ -222,7 +225,7 @@ TEST_F(ParseArgumentsTest, ArgCyclesNegative) {
   std::string output = testing::internal::GetCapturedStdout();
   std::string error = testing::internal::GetCapturedStderr();
   EXPECT_EQ(output, "");
-  EXPECT_EQ(error, "Error: cycles must be greater than or equal to 1\n\n");
+  EXPECT_EQ(error, "Error: cycles must be greater than or equal to 0\n\n");
 }
 
 TEST_F(ParseArgumentsTest, ArgCyclesINT_MAX) {
@@ -506,13 +509,32 @@ TEST_F(ParseArgumentsTest, ArgTlbSizeNegative) {
 TEST_F(ParseArgumentsTest, ArgTlbSizeZero) {
   struct Configuration cnf;
   char* argv[] = {(char*)"./sim", (char*)"--tlb-size=0", (char*)"file.csv"};
-  EXPECT_EQ(PARSE_ARG_RESULT_ERROR, parse_arguments(3, argv, &cnf));
+  EXPECT_EQ(PARSE_ARG_RESULT_SUCCESS, parse_arguments(3, argv, &cnf));
+
+  // Check configuration
+  EXPECT_EQ(cnf.tlbSize, 0);
 
   // Check error message
   std::string output = testing::internal::GetCapturedStdout();
   std::string error = testing::internal::GetCapturedStderr();
   EXPECT_EQ(output, "");
-  EXPECT_EQ(error, "Error: tlb-size must be a power of 2\n\n");
+  EXPECT_EQ(error, "WARN: TLB size is set to zero, simulation will not use TLB\n");
+}
+
+TEST_F(ParseArgumentsTest, ArgTlbSizeZeroOverridesLatency) {
+  struct Configuration cnf;
+  char* argv[] = {(char*)"./sim", (char*)"--tlb-latency=17", (char*)"--tlb-size=0", (char*)"file.csv"};
+  EXPECT_EQ(PARSE_ARG_RESULT_SUCCESS, parse_arguments(4, argv, &cnf));
+
+  // Check configuration
+  EXPECT_EQ(cnf.tlbSize, 0);
+  EXPECT_EQ(cnf.tlbLatency, 0);
+
+  // Check error message
+  std::string output = testing::internal::GetCapturedStdout();
+  std::string error = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(output, "");
+  EXPECT_EQ(error, "WARN: TLB size is set to zero, simulation will not use TLB\n");
 }
 
 TEST_F(ParseArgumentsTest, ArgTlbSizeOne) {

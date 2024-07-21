@@ -55,7 +55,17 @@ CACHELINES::CACHELINES(sc_module_name name, size_t numLines, sc_trace_file* vcdT
 void CACHELINES::cacheLinesOperation() {
   // Protect against empty cache lines -> access into empty vector
   if (cacheLines.empty()) {
-    return;
+    while (true) {
+      frameNumberOut.write(0);
+      found.write(false);
+
+      debug_log(
+        "CacheLines (DUMMY)",
+        "Mode: " << (writeEnabled.read() ? "Write" : "Read")
+      );
+
+      wait();
+    }
   }
 
   while (true) {

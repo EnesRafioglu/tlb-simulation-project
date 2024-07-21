@@ -26,7 +26,8 @@
 
 bool maybe_print_requires_value(int opt);
 int validate_and_extract_number(char* argName, char* str, void* value,
-                                bool isSigned, const void* min, bool pow2);
+                                bool isSigned, const void* min, bool pow2,
+                                bool allowZero);
 
 /**
  * @brief Enumeration of command line options.
@@ -85,7 +86,7 @@ enum PARSE_ARG_RESULT parse_arguments(int argc, char* argv[],
   cnf->inputFile = NULL;
 
   // Common minimum values for use with `validate_and_extract_number`
-  const int signedOne = 1;
+  const int signedZero = 0;
   const unsigned int unsignedZero = 0;
   const unsigned int unsignedOne = 1;
 
@@ -97,7 +98,7 @@ enum PARSE_ARG_RESULT parse_arguments(int argc, char* argv[],
       switch (opt) {
         case OPTION_CYCLES:
           RETURNS_0_OR_ARG_PARSE_ERROR(validate_and_extract_number(
-              "cycles", optarg, &cnf->cycles, true, &signedOne, false));
+              "cycles", optarg, &cnf->cycles, true, &signedZero, false, true));
 
           // Ensure that cycles is not INT_MAX because that could lead to an
           // ambiguous `Result`
@@ -108,10 +109,17 @@ enum PARSE_ARG_RESULT parse_arguments(int argc, char* argv[],
             return PARSE_ARG_RESULT_ERROR;
           }
 
+          // Warn if cycles is zero
+          if (cnf->cycles == 0) {
+            fprintf(stderr,
+                    "WARN: cycles is set to zero, simulation will not run\n");
+          }
+
           break;
         case OPTION_BLOCKSIZE:
-          RETURNS_0_OR_ARG_PARSE_ERROR(validate_and_extract_number(
-              "blocksize", optarg, &cnf->blocksize, false, &unsignedOne, true));
+          RETURNS_0_OR_ARG_PARSE_ERROR(
+              validate_and_extract_number("blocksize", optarg, &cnf->blocksize,
+                                          false, &unsignedOne, true, false));
 
           // Ensure that the blocksize is at least one word long
           if (cnf->blocksize < 4) {
@@ -124,21 +132,30 @@ enum PARSE_ARG_RESULT parse_arguments(int argc, char* argv[],
         case OPTION_V2B_BLOCK_OFFSET:
           RETURNS_0_OR_ARG_PARSE_ERROR(validate_and_extract_number(
               "v2b-block-offset", optarg, &cnf->v2bBlockOffset, false,
-              &unsignedZero, false));
+              &unsignedZero, false, true));
           break;
         case OPTION_TLB_SIZE:
-          RETURNS_0_OR_ARG_PARSE_ERROR(validate_and_extract_number(
-              "tlb-size", optarg, &cnf->tlbSize, false, &unsignedOne, true));
+          RETURNS_0_OR_ARG_PARSE_ERROR(
+              validate_and_extract_number("tlb-size", optarg, &cnf->tlbSize,
+                                          false, &unsignedOne, true, true));
+
+          // Warn if TLB size is zero
+          if (cnf->tlbSize == 0) {
+            fprintf(
+                stderr,
+                "WARN: TLB size is set to zero, simulation will not use TLB\n");
+          }
+
           break;
         case OPTION_TLB_LATENCY:
           RETURNS_0_OR_ARG_PARSE_ERROR(validate_and_extract_number(
               "tlb-latency", optarg, &cnf->tlbLatency, false, &unsignedZero,
-              false));
+              false, true));
           break;
         case OPTION_MEMORY_LATENCY:
           RETURNS_0_OR_ARG_PARSE_ERROR(validate_and_extract_number(
               "memory-latency", optarg, &cnf->memoryLatency, false,
-              &unsignedZero, false));
+              &unsignedZero, false, true));
           break;
         case OPTION_TRACE_FILE:
           if (optarg == NULL || strlen(optarg) == 0) {
@@ -207,6 +224,11 @@ enum PARSE_ARG_RESULT parse_arguments(int argc, char* argv[],
     fprintf(stderr, "Error: No input file specified\n\n");
 
     return PARSE_ARG_RESULT_ERROR;
+  }
+
+  // Ensure that tlbLatency is zero if tlbSize is zero
+  if (cnf->tlbSize == 0) {
+    cnf->tlbLatency = 0;
   }
 
   return PARSE_ARG_RESULT_SUCCESS;
@@ -289,10 +311,13 @@ void print_usage(const char* program_name) {
  * @param min A pointer to the minimum value that the parsed value must be
  *            greater than or equal to.
  * @param pow2 A boolean indicating whether the value must be a power of 2.
+ * @param allowZero A boolean indicating whether the value can be zero
+ * (overrides the minimum value and pow2 check).
  * @return 0 if the validation was successful, 1 otherwise.
  */
 int validate_and_extract_number(char* argName, char* str, void* value,
-                                bool isSigned, const void* min, bool pow2) {
+                                bool isSigned, const void* min, bool pow2,
+                                bool allowZero) {
   // Parse the string to an integer
   enum PARSE_RESULT result;
   if (isSigned) {
@@ -325,6 +350,12 @@ int validate_and_extract_number(char* argName, char* str, void* value,
     case PARSE_GENERAL_ERROR:
       fprintf(stderr, "Error: %s is not a valid number\n\n", argName);
       return 1;
+  }
+
+  // Check if the value can be zero -> bypass additional checks
+  if (allowZero && ((isSigned && *(int*)value == 0) ||
+                    (!isSigned && *(unsigned int*)value == 0))) {
+    return 0;
   }
 
   // Check if the value must be a power of 2

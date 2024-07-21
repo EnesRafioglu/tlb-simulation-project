@@ -890,6 +890,179 @@ INSTANTIATE_TEST_SUITE_P(
         0x11,
         0x00,
       }
+    ),
+    SimulationTestParams(
+      "ZeroCyclesNoRequests",
+
+      // Cycles
+      0,
+      // TLB Size
+      4,
+      // TLB Latency
+      1,
+      // Blocksize
+      16,
+      // V2B Block Offset
+      0,
+      // Memory Latency
+      1,
+      // Number of Requests
+      0,
+      // Requests
+      {},
+      // Tracefile
+      nullptr,
+
+      // Expect Gate Count
+      true,
+      // Expected Result
+      Result{
+        // Cycles
+        std::numeric_limits<size_t>::max(),
+        // Misses
+        0,
+        // Hits
+        0,
+        // Primitive Gate Count
+        1568
+      },
+      // Expected Reads
+      {}
+    ),
+    SimulationTestParams(
+      "ZeroCyclesWithRequests",
+
+      // Cycles
+      0,
+      // TLB Size
+      4,
+      // TLB Latency
+      1,
+      // Blocksize
+      16,
+      // V2B Block Offset
+      0,
+      // Memory Latency
+      1,
+      // Number of Requests
+      4,
+      // Requests
+      {
+        WRITE_R(0x01, 0x11),
+        READ_R(0x01),
+        READ_R(0x01),
+        READ_R(0x01)
+      },
+      // Tracefile
+      nullptr,
+
+      // Expect Gate Count
+      true,
+      // Expected Result
+      Result{
+        // Cycles
+        std::numeric_limits<size_t>::max(),
+        // Misses
+        0,
+        // Hits
+        0,
+        // Primitive Gate Count
+        1568
+      },
+      // Expected Reads
+      {
+        0x11,
+        0x00,
+        0x00,
+        0x00,
+      }
+    ),
+    SimulationTestParams(
+      "ZeroTlbSizeNoRequests",
+
+      // Cycles
+      100,
+      // TLB Size
+      0,
+      // TLB Latency
+      17,
+      // Blocksize
+      16,
+      // V2B Block Offset
+      0,
+      // Memory Latency
+      1,
+      // Number of Requests
+      0,
+      // Requests
+      {},
+      // Tracefile
+      nullptr,
+
+      // Expect Gate Count
+      true,
+      // Expected Result
+      Result{
+        // Cycles
+        0,
+        // Misses
+        0,
+        // Hits
+        0,
+        // Primitive Gate Count
+        0
+      },
+      // Expected Reads
+      {}
+    ),
+    SimulationTestParams(
+      "ZeroTlbSizeWithRequests",
+
+      // Cycles
+      100,
+      // TLB Size
+      0,
+      // TLB Latency
+      17,
+      // Blocksize
+      16,
+      // V2B Block Offset
+      0,
+      // Memory Latency
+      5,
+      // Number of Requests
+      4,
+      // Requests
+      {
+        WRITE_R(0x01, 0x11),
+        READ_R(0x01),
+        READ_R(0x01),
+        READ_R(0x01)
+      },
+      // Tracefile
+      nullptr,
+
+      // Expect Gate Count
+      true,
+      // Expected Result
+      Result{
+        // Cycles
+        // numReq + (numReq * memLatency) + (numReq * TLBLatency) + (numTLBMiss * (memLatency + TLBWriteLatency))
+        4 + (4*5) + (4*0) + (4*(5+0)),
+        // Misses
+        4,
+        // Hits
+        0,
+        // Primitive Gate Count
+        0
+      },
+      // Expected Reads
+      {
+        0x11,
+        0x11,
+        0x11,
+        0x11,
+      }
     )
   ),
   get_simulation_test_name

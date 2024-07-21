@@ -11,7 +11,19 @@
 
 using namespace sc_core;
 
-size_t gateCount (unsigned tlbSize, unsigned blocksize) {
+/**
+ * Calculates the total number of gates required to implement the simulated TLB
+ * in hardware.
+ * 
+ * @param tlbSize The size of the TLB.
+ * @param blocksize The block size of the TLB.
+ * @return The total number of gates required for the TLB simulation.
+ */
+size_t gateCount(unsigned tlbSize, unsigned blocksize) {
+  if (tlbSize == 0) {
+    return 0;
+  }
+
   unsigned int numIndexBits = std::log2(tlbSize);
   unsigned int numCachelines = tlbSize;
 
@@ -77,6 +89,12 @@ extern "C" Result run_simulation(
   }
   didSimulationRun = true;
 
+  //? We already ensure this invariant in the C argument parsing, but we do it
+  //? again here to be safe, especially for direct calls without the CLI.
+  if (tlbSize == 0) {
+    tlbsLatency = 0;
+  }
+
   #ifdef DEBUG
   std::cout << "Running simulation with the following parameters:\n";
   std::cout << "\tCycles: " << cycles << "\n";
@@ -96,11 +114,9 @@ extern "C" Result run_simulation(
   std::cout << std::endl;
 
   // Calculate the bit parts of the virtual address
-  // TODO: Check blocksize and tlbSize for power of 2
-  // TODO: Blocksize must also be devisible by 4 and >= 4!
   const long numberOfPageTableEntries = 4294967296 / (long)blocksize;
   const unsigned int numPageBits = std::log2(numberOfPageTableEntries);
-  const unsigned int numIndexBits = std::log2(tlbSize);
+  const unsigned int numIndexBits = tlbSize > 0 ? std::log2(tlbSize) : 0;
   const unsigned int numTagBits = numPageBits - numIndexBits;
   const unsigned int numOffsetBits = std::log2(blocksize);
 
