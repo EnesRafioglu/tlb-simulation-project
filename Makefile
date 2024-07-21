@@ -10,7 +10,13 @@ OBJECTS_CPP  := $(addprefix build/,$(SOURCES_CPP:.cpp=.o))
 
 SRC_DIRS     := $(shell find src -type d)
 
-SYSTEMC_PATH := $(realpath ../systemc)
+ifeq (${SYSTEMC_HOME},)
+	SYSTEMC_PATH_LIB := $(realpath ../systemc/lib)
+	SYSTEMC_PATH_INCLUDE := $(realpath ../systemc/include)
+else
+	SYSTEMC_PATH_LIB := $(SYSTEMC_HOME)
+	SYSTEMC_PATH_INCLUDE := $(realpath "$(SYSTEMC_HOME)/../include")
+endif
 
 BUILD_DIR    := build
 OUTPUT       := tlb
@@ -18,9 +24,9 @@ OUTPUT       := tlb
 
 #* Define the compiler and flags
 COMPILER_FLAGS_C       := -std=gnu17 -Wall -Wextra -DLANG_C
-COMPILER_FLAGS_CPP     := -std=gnu++14 -Wall -Wextra -isystem$(SYSTEMC_PATH)/include -DLANG_CPP
+COMPILER_FLAGS_CPP     := -std=gnu++14 -Wall -Wextra -isystem$(SYSTEMC_PATH_INCLUDE) -DLANG_CPP
 
-LINKER_FLAGS           := -L$(SYSTEMC_PATH)/lib -lsystemc -Wl,-rpath,$(SYSTEMC_PATH)/lib
+LINKER_FLAGS           := -L$(SYSTEMC_PATH_LIB) -lsystemc -Wl,-rpath,$(SYSTEMC_PATH_LIB)
 
 COMPILER_FLAGS_DEBUG   := -g -fsanitize=address -fsanitize=undefined -DDEBUG
 COMPILER_FLAGS_RELEASE := -O2
