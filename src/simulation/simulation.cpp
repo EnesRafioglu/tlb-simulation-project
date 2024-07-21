@@ -38,11 +38,9 @@ size_t gateCount (unsigned tlbSize, unsigned blocksize) {
   // a OR operation to check if the result is zero.
   // From ERA lecture it is known that a SUB operation can be implemented with 
   // a Full Adder (5n), where all bits of the second operand are inverted (n) 
-  // 
   size_t comparatorGates = 6 * numTagBits + 1; 
 
   return cacheStoreGates + muxGates + decoderGates + overwriteGates + comparatorGates;
-
 }
 
 /**
@@ -119,7 +117,10 @@ extern "C" Result run_simulation(
 
   //* Create SystemC modules
   // Create the TLB
-  TLB tlb("tlb", tlbSize, blocksize);
+  CACHELINES cache("cache",tlbSize);
+
+  //Create the TLB
+  TLB tlb("tlb", &cache);
 
   // Create the Memory
   Memory memory("memory");
@@ -132,7 +133,6 @@ extern "C" Result run_simulation(
 
   //* Wire up the SystemC modules
   sc_clock clk("clk", sc_time(1, SC_NS));
-  tlb.clk(clk);
   memory.clk(clk);
   cpu.clk(clk);
 
