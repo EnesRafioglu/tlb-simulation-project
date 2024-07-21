@@ -44,6 +44,7 @@ enum OPTION {
   OPTION_TLB_LATENCY = 4,
   OPTION_MEMORY_LATENCY = 5,
   OPTION_TRACE_FILE = 6,
+  OPTION_OUTPUT = 'o',
   OPTION_HELP = 'h',
 
   /** Represents the value returned when an unknown option is encountered */
@@ -65,6 +66,7 @@ static struct option longArguments[] = {
     {"tlb-latency", required_argument, NULL, OPTION_TLB_LATENCY},
     {"memory-latency", required_argument, NULL, OPTION_MEMORY_LATENCY},
     {"tf", required_argument, NULL, OPTION_TRACE_FILE},
+    {"output", required_argument, NULL, OPTION_OUTPUT},
     {"help", no_argument, NULL, OPTION_HELP},
 };
 
@@ -78,6 +80,7 @@ enum PARSE_ARG_RESULT parse_arguments(int argc, char* argv[],
   cnf->tlbLatency = 10;
   cnf->memoryLatency = 100;
   cnf->traceFile = NULL;
+  cnf->outputFile = NULL;
 
   cnf->inputFile = NULL;
 
@@ -90,7 +93,7 @@ enum PARSE_ARG_RESULT parse_arguments(int argc, char* argv[],
   int opt;
   opterr = 0;
   while (optind < argc) {
-    if ((opt = getopt_long(argc, argv, "c:h", longArguments, NULL)) != -1) {
+    if ((opt = getopt_long(argc, argv, "c:o:h", longArguments, NULL)) != -1) {
       switch (opt) {
         case OPTION_CYCLES:
           RETURNS_0_OR_ARG_PARSE_ERROR(validate_and_extract_number(
@@ -109,10 +112,11 @@ enum PARSE_ARG_RESULT parse_arguments(int argc, char* argv[],
         case OPTION_BLOCKSIZE:
           RETURNS_0_OR_ARG_PARSE_ERROR(validate_and_extract_number(
               "blocksize", optarg, &cnf->blocksize, false, &unsignedOne, true));
-          
+
           // Ensure that the blocksize is at least one word long
           if (cnf->blocksize < 4) {
-            fprintf(stderr, "Error: blocksize must be greater than or equal to 4\n\n");
+            fprintf(stderr,
+                    "Error: blocksize must be greater than or equal to 4\n\n");
             return PARSE_ARG_RESULT_ERROR;
           }
 
@@ -148,6 +152,21 @@ enum PARSE_ARG_RESULT parse_arguments(int argc, char* argv[],
           }
 
           cnf->traceFile = optarg;
+          break;
+        case OPTION_OUTPUT:
+          if (optarg == NULL || strlen(optarg) == 0) {
+            fprintf(stderr, "Error: --output requires a value\n\n");
+            return PARSE_ARG_RESULT_ERROR;
+          }
+
+          // Check for CSV suffix
+          if (!has_suffix(optarg, ".csv")) {
+            fprintf(stderr,
+                    "WARN: Output file does not have a .csv suffix - will "
+                    "continue for now\n");
+          }
+
+          cnf->outputFile = optarg;
           break;
         case OPTION_HELP:
           return PARSE_ARG_RESULT_HELP;
@@ -246,6 +265,8 @@ void print_usage(const char* program_name) {
       "  --memory-latency=<unsigned>\tThe latency of the main memory in "
       "cycles (default: 100)\n"
       "  --tf=<path>\t\t\tOutput path for a trace file with all signals "
+      "(optional)\n"
+      "  --output=<path>\t\tOutput path for the simulation read results "
       "(optional)\n"
       "  --help\t\t\tPrint this help message\n",
       program_name);

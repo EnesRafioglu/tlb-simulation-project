@@ -27,6 +27,7 @@ TEST(PrintUsageTest, Output) {
     "  --tlb-latency=<unsigned>\tThe latency of the TLB in cycles (default: 10)\n"
     "  --memory-latency=<unsigned>\tThe latency of the main memory in cycles (default: 100)\n"
     "  --tf=<path>\t\t\tOutput path for a trace file with all signals (optional)\n"
+    "  --output=<path>\t\tOutput path for the simulation read results (optional)\n"
     "  --help\t\t\tPrint this help message\n"
   );
   EXPECT_EQ(error, "");
@@ -780,4 +781,80 @@ TEST_F(ParseArgumentsTest, ArgTraceFileEmpty) {
   std::string error = testing::internal::GetCapturedStderr();
   EXPECT_EQ(output, "");
   EXPECT_EQ(error, "Error: --tf requires a value\n\n");
+}
+
+//* Output
+
+TEST_F(ParseArgumentsTest, ArgOutputFileShort) {
+  struct Configuration cnf;
+  char* argv[] = {(char*)"./sim", (char*)"-o", (char*)"out.csv", (char*)"file.csv"};
+  EXPECT_EQ(PARSE_ARG_RESULT_SUCCESS, parse_arguments(4, argv, &cnf));
+
+  // Check configuration
+  EXPECT_STREQ(cnf.outputFile, "out.csv");
+
+  // Check error message
+  std::string output = testing::internal::GetCapturedStdout();
+  std::string error = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(output, "");
+  EXPECT_EQ(error, "");
+}
+
+TEST_F(ParseArgumentsTest, ArgOutputFileLong) {
+  struct Configuration cnf;
+  char* argv[] = {(char*)"./sim", (char*)"--output", (char*)"out.csv", (char*)"file.csv"};
+  EXPECT_EQ(PARSE_ARG_RESULT_SUCCESS, parse_arguments(4, argv, &cnf));
+
+  // Check configuration
+  EXPECT_STREQ(cnf.outputFile, "out.csv");
+
+  // Check error message
+  std::string output = testing::internal::GetCapturedStdout();
+  std::string error = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(output, "");
+  EXPECT_EQ(error, "");
+}
+
+TEST_F(ParseArgumentsTest, ArgOutputFileLongEquals) {
+  struct Configuration cnf;
+  char* argv[] = {(char*)"./sim", (char*)"--output=out.csv", (char*)"file.csv"};
+  EXPECT_EQ(PARSE_ARG_RESULT_SUCCESS, parse_arguments(3, argv, &cnf));
+
+  // Check configuration
+  EXPECT_STREQ(cnf.outputFile, "out.csv");
+
+  // Check error message
+  std::string output = testing::internal::GetCapturedStdout();
+  std::string error = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(output, "");
+  EXPECT_EQ(error, "");
+}
+
+TEST_F(ParseArgumentsTest, ArgOutputFileNotCSV) {
+  struct Configuration cnf;
+  char* argv[] = {(char*)"./sim", (char*)"--output=out.txt", (char*)"file.csv"};
+  EXPECT_EQ(PARSE_ARG_RESULT_SUCCESS, parse_arguments(3, argv, &cnf));
+
+  // Check configuration
+  EXPECT_STREQ(cnf.outputFile, "out.txt");
+
+  // Check error message
+  std::string output = testing::internal::GetCapturedStdout();
+  std::string error = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(output, "");
+  EXPECT_EQ(error, "WARN: Output file does not have a .csv suffix - will continue for now\n");
+}
+
+TEST_F(ParseArgumentsTest, ArgOutputFileEmpty) {
+  struct Configuration cnf;
+  // This also covers calls with `--output=""` as they will be treated as
+  // `--output=` by the shell
+  char* argv[] = {(char*)"./sim", (char*)"--output=", (char*)"file.csv"};
+  EXPECT_EQ(PARSE_ARG_RESULT_ERROR, parse_arguments(3, argv, &cnf));
+
+  // Check error message
+  std::string output = testing::internal::GetCapturedStdout();
+  std::string error = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(output, "");
+  EXPECT_EQ(error, "Error: --output requires a value\n\n");
 }
