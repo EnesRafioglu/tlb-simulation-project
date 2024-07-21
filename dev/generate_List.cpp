@@ -65,7 +65,7 @@ int listSum(Node* head) {
 // Used to generate the csv file to simulate the memory access,
 // when iterating through the linked list
 // The write requests simulate the creation of the linked list.
-// For the evaluation of the sum in the README.md file the files,
+// For the evaluation of the sum in the Readme.md file the files,
 // which consist only of read requests were taken
 // The read requests simulate the iteration through the linked list
 // to sum up its values
