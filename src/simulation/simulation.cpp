@@ -29,13 +29,13 @@ size_t gateCount (unsigned tlbSize, unsigned blocksize) {
   // The multiplexer is used to propagate the right cache entry.
   // From the ERA lecture it is known that a n-Bit Mux (with two inputs)
   // can be implemented with 3n + 1 gates. For more inputs k we can simply
-  // take k-1 Muxes (in a tree like structure). Wo we need log2(k) select
+  // take k-1 Muxes (in a tree like structure). So we need log2(k) select
   // bits and therefore log2(k) not gates.
   size_t muxGates = (numCachelines - 1) * (3 * cacheLineSize) + numIndexBits;
 
   // the decoder is used to select the right cache line with the index Bits as input
   // decoder with n inputs has 2^n outputs. Therefore we need 2^n and gates and n not gates.
-  size_t decoderGates = (1 << numIndexBits)*(numIndexBits - 1) + numIndexBits;
+  size_t decoderGates = numIndexBits > 0 ? (1 << numIndexBits)*(numIndexBits - 1) + numIndexBits : 0;
 
   // Gates used to AND the writeEnabled signal with the select (decoder) signal
   size_t writeEnabledSelect = numCachelines;
