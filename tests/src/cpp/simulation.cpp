@@ -1646,9 +1646,6 @@ SimulationTestParams generate_random_test(const std::string& name, int seed, Ran
   std::map<uint32_t, uint32_t> tlb;
 
   for (size_t j = 0; j < numRequests; j++) {
-    // Every request needs at least 1 base cycle (CPU high clock)
-    expectedCycles += 1;
-
     // Generate the basic request data
     bool isWrite = distributions.requestType(rd);
     uint32_t address = distributions.address(rd);
@@ -1712,6 +1709,9 @@ SimulationTestParams generate_random_test(const std::string& name, int seed, Ran
 generate_random_test_done:
     requests.push_back(isWrite ? WRITE_R(address / 4, data) : READ_R(address / 4));
     expectedData.push_back(data);
+
+    // Every request needs at least 1 base cycle (CPU high clock)
+    expectedCycles += 1;
   }
 
   // Check if we weren't able to finish all requests
