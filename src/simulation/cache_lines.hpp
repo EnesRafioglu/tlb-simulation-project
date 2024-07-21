@@ -38,14 +38,6 @@ public:
   sc_out<bool> found;
 
 private:
-  //? Note on the usage of std::unique_ptr
-  //?
-  //? SystemC objects have their copy and move constructors either deleted or
-  //? inaccessible for our means. This means that we can't store them in a
-  //? std::vector directly. We can, however, store them in a std::unique_ptr
-  //? and then store the std::unique_ptr in the vector. This way, we can
-  //? dynamically allocate the objects and store them in the vector while still
-  //? being memory safe.
 
   /**
    * @brief Represents a single entry in a list of cache lines.
@@ -54,14 +46,27 @@ private:
    * It includes the cache line itself, as well as signals unique to it.
    */
   struct CacheLineEntry {
-    std::unique_ptr<CACHELINE> cacheline;
+  public:
+    CACHELINE cacheline;
 
     sc_signal<bool> writeEnabled;
 
     sc_signal<sc_bv<32>> tagOut;
     sc_signal<sc_bv<32>> frameNumberOut;
     sc_signal<bool> isInitializedOut;
+
+  public:
+    CacheLineEntry();
   };
+
+  //? Note on the usage of std::unique_ptr
+  //?
+  //? SystemC objects have their copy and move constructors either deleted or
+  //? inaccessible for our means. This means that we can't store them in a
+  //? std::vector directly. We can, however, store them in a std::unique_ptr
+  //? and then store the std::unique_ptr in the vector. This way, we can
+  //? dynamically allocate the objects and store them in the vector while still
+  //? being memory safe.
 
   /** Cache lines orchestrated by the TLB */
   std::vector<std::unique_ptr<CacheLineEntry>> cacheLines;
@@ -78,7 +83,7 @@ private:
   size_t lastSelectedIndex = 0;
 
 public:
-  CACHELINES(sc_module_name name, size_t numLines);
+  CACHELINES(sc_module_name name, size_t numLines, sc_trace_file* vcdTraceFile);
 
 private:
   /** @brief Method that is called when a signal on the sensitivity list changes.

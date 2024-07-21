@@ -127,9 +127,16 @@ extern "C" Result run_simulation(
   // "Info: /OSCI/SystemC: Simulation stopped by user."
   CaptureStream captureStdout(std::cout, false);
 
+  //* Setup tracefile
+  sc_trace_file* vcdTraceFile = nullptr;
+  if (tracefile != nullptr) {
+    std::cerr << "Tracing TLB signals to: " << tracefile << ".vcd" << std::endl;
+    vcdTraceFile = sc_create_vcd_trace_file(tracefile);
+  }
+
   //* Create SystemC modules
   // Create the TLB
-  TLB tlb("tlb", tlbSize);
+  TLB tlb("tlb", tlbSize, vcdTraceFile);
 
   // Create the Memory
   Memory memory("memory");
@@ -158,6 +165,11 @@ extern "C" Result run_simulation(
   //? messages might not be printed before the CPU returns. To prevent this, we
   //? stop capturing the stdout after the simulation has definitely stopped.
   captureStdout.stop();
+
+  //* Close the tracefile
+  if (vcdTraceFile != nullptr) {
+    sc_close_vcd_trace_file(vcdTraceFile);
+  }
 
   // Return result
   //* NOTE: We record TLB hits and misses even if the request isn't fully

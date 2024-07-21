@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
   }
 
   printf("Number of requests: %lu\n", line_count);
-  
+
   for (size_t i = 0; i < line_count; i++) {
     struct Request req;
     req = requests[i];
@@ -66,7 +66,6 @@ int main(int argc, char* argv[]) {
     printf("Request %zu: addr=%u, data=%u, we=%d\n", i, req.addr, req.data,
            req.we);
   }
-
 
   // Run the simulation
   struct Result result =
@@ -93,6 +92,10 @@ int main(int argc, char* argv[]) {
 
   // Clean up
   free(requests);
+
+  //? We don't need to free cnf.traceFile or cnf.inputFile because they are
+  //? pointers to the argv array and the argv array is managed by the operating
+  //? system.
 
   return 0;
 }

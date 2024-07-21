@@ -2,7 +2,13 @@
 
 #include "logging.hpp"
 
-CACHELINES::CACHELINES(sc_module_name name, size_t numLines) : sc_module(name) {
+// This constructor allows us to initialize the cache line with a unique name
+// without having to use pointers to then store it in the entry.
+CACHELINES::CacheLineEntry::CacheLineEntry() :
+  cacheline(sc_gen_unique_name("cache_line"))
+{}
+
+CACHELINES::CACHELINES(sc_module_name name, size_t numLines, sc_trace_file* vcdTraceFile) : sc_module(name) {
   //? For note on the usage of std::unique_ptr, see
   //? src/simulation/cache_lines.hpp
 
@@ -10,21 +16,32 @@ CACHELINES::CACHELINES(sc_module_name name, size_t numLines) : sc_module(name) {
   cacheLines.reserve(numLines);
 
   for (size_t i = 0; i < numLines; i++) {
-    std::unique_ptr<CACHELINE> cacheLine = std::make_unique<CACHELINE>(sc_gen_unique_name("cache_line"));
-
     std::unique_ptr<CacheLineEntry> cacheLineEntry = std::make_unique<CacheLineEntry>();
-    cacheLineEntry->cacheline = std::move(cacheLine);
 
-    cacheLineEntry->cacheline->tagIn(tag);
-    cacheLineEntry->cacheline->dataIn(frameNumberIn);
+    cacheLineEntry->cacheline.tagIn(tag);
+    cacheLineEntry->cacheline.dataIn(frameNumberIn);
 
-    cacheLineEntry->cacheline->writeEnabled(cacheLineEntry->writeEnabled);
-    cacheLineEntry->cacheline->tagOut(cacheLineEntry->tagOut);
-    cacheLineEntry->cacheline->frameNumberOut(cacheLineEntry->frameNumberOut);
-    cacheLineEntry->cacheline->isInitializedOut(cacheLineEntry->isInitializedOut);
+    cacheLineEntry->cacheline.writeEnabled(cacheLineEntry->writeEnabled);
+    cacheLineEntry->cacheline.tagOut(cacheLineEntry->tagOut);
+    cacheLineEntry->cacheline.frameNumberOut(cacheLineEntry->frameNumberOut);
+    cacheLineEntry->cacheline.isInitializedOut(cacheLineEntry->isInitializedOut);
 
     cacheLineEntry->writeEnabled.write(false);
     cacheLineEntry->isInitializedOut.write(false);
+
+    // Trace the signals
+    if (vcdTraceFile != nullptr) {
+      std::string cacheLineName = std::string("cache_line_") + std::to_string(i) + "_";
+      std::string writeEnabledName = cacheLineName + "write_enabled";
+      std::string tagOutName = cacheLineName + "tag_out";
+      std::string frameNumberOutName = cacheLineName + "frame_number_out";
+      std::string isInitializedOutName = cacheLineName + "is_initialized_out";
+
+      sc_trace(vcdTraceFile, cacheLineEntry->cacheline.writeEnabled, writeEnabledName);
+      sc_trace(vcdTraceFile, cacheLineEntry->cacheline.tagOut, tagOutName);
+      sc_trace(vcdTraceFile, cacheLineEntry->cacheline.frameNumberOut, frameNumberOutName);
+      sc_trace(vcdTraceFile, cacheLineEntry->cacheline.isInitializedOut, isInitializedOutName);
+    }
 
     cacheLines.push_back(std::move(cacheLineEntry));
   }

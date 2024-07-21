@@ -132,6 +132,11 @@ enum PARSE_ARG_RESULT parse_arguments(int argc, char* argv[],
             return PARSE_ARG_RESULT_ERROR;
           }
 
+          // Strip the .vcd suffix if it exists
+          if (has_suffix(optarg, ".vcd")) {
+            optarg[strlen(optarg) - 4] = '\0';
+          }
+
           cnf->traceFile = optarg;
           break;
         case OPTION_HELP:
