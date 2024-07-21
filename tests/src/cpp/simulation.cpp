@@ -1787,11 +1787,14 @@ std::vector<SimulationTestParams> generate_random_tests(const std::string& baseN
   return tests;
 }
 
-SimulationTestParams generate_specific_random_test(const std::string& baseName, int seed, RandomTestDistributions distributions) {
+SimulationTestParams generate_specific_random_test(const std::string& baseName, int seed, RandomTestDistributions distributions, bool log = false) {
   std::string name = baseName + "__seed__" + std::to_string(seed);
 
   SimulationTestParams test = generate_random_test(name, seed, distributions);
-  std::cout << "Specific Random Test: " << test << std::endl;
+
+  if (log) {
+    std::cout << "Specific Random Test: " << test << std::endl;
+  }
 
   return test;
 }
@@ -1827,33 +1830,34 @@ INSTANTIATE_TEST_SUITE_P(
   get_simulation_test_name
 );
 
-// INSTANTIATE_TEST_SUITE_P(
-//   SimulationSpecificGenerativeTest,
-//   SimulationDeathTest,
-//   testing::Values(
-//     generate_specific_random_test(
-//       "SpecificTest",
-//       1475551957,
-//       RandomTestDistributions(
-//         // Cycles
-//         std::uniform_int_distribution<>(1000, 1000000),
-//         // Number of Index Bits (TLB Size)
-//         // Tag bits are dynamically calculated with a distribution over [0, 32 - 2 - numIndexBits]
-//         std::uniform_int_distribution<>(1, 17),
-//         // TLB Latency
-//         std::uniform_int_distribution<>(1, 1000),
-//         // V2B Block Offset
-//         std::uniform_int_distribution<>(0, 1000),
-//         // Number of Requests
-//         std::uniform_int_distribution<>(1, 5000),
-//         // Request Type
-//         std::uniform_int_distribution<>(0, 1),
-//         // Address
-//         std::uniform_int_distribution<>(0, 0xFFFFFFFF),
-//         // Data
-//         std::uniform_int_distribution<>(0, 0xFFFFFFFF)
-//       )
-//     )
-//   ),
-//   get_simulation_test_name
-// );
+INSTANTIATE_TEST_SUITE_P(
+  SimulationSpecificGenerativeTest,
+  SimulationDeathTest,
+  testing::Values(
+    generate_specific_random_test(
+      "SpecificTest",
+      1475551957,
+      RandomTestDistributions(
+        // Cycles
+        std::uniform_int_distribution<>(1000, 1000000),
+        // Number of Index Bits (TLB Size)
+        // Tag bits are dynamically calculated with a distribution over [0, 32 - 2 - numIndexBits]
+        std::uniform_int_distribution<>(1, 17),
+        // TLB Latency
+        std::uniform_int_distribution<>(1, 1000),
+        // V2B Block Offset
+        std::uniform_int_distribution<>(0, 1000),
+        // Number of Requests
+        std::uniform_int_distribution<>(1, 5000),
+        // Request Type
+        std::uniform_int_distribution<>(0, 1),
+        // Address
+        std::uniform_int_distribution<>(0, 0xFFFFFFFF),
+        // Data
+        std::uniform_int_distribution<>(0, 0xFFFFFFFF)
+      ),
+      false
+    )
+  ),
+  get_simulation_test_name
+);
