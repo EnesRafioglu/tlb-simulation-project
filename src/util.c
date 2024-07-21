@@ -99,6 +99,17 @@ int is_power_of_two(unsigned int x) {
   return x && !(x & (x - 1));
 }
 
+int ilog2(uint32_t x) {
+  int log = 0;
+
+  while (x > 1) {
+    x >>= 1;
+    log++;
+  }
+
+  return log;
+}
+
 // This function is quite trivial and seems to be the default implementation of
 // a suffix check. To avoid any potential plagiarism, I will leave the following
 // link to a StackOverflow answer that provides a similar implementation I found

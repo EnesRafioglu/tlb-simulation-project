@@ -79,6 +79,18 @@ enum PARSE_RESULT parse_string_to_uint32(const char* str, uint32_t* value);
 int is_power_of_two(unsigned int x);
 
 /**
+ * Calculates the base-2 logarithm of a 32-bit integer.
+ *
+ * This function calculates the base-2 logarithm of a 32-bit integer.
+ * The function assumes that the input is a power of two. If the input is not a
+ * power of two, the result is undefined.
+ *
+ * @param x The integer to calculate the logarithm of.
+ * @return The base-2 logarithm of the integer.
+ */
+int ilog2(uint32_t x);
+
+/**
  * Checks if a string has a specific suffix.
  *
  * This function takes two parameters: `str` and `suffix`. It checks if the
