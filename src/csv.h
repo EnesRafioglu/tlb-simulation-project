@@ -39,5 +39,16 @@ enum CSV_RESULT {
  * the parsed data.
  * @return The result of parsing the CSV file.
  */
-enum PARSE_CSV_RESULT parse_csv(const char* filename, size_t* line_count,
-                                struct Request** requests);
+enum CSV_RESULT parse_csv(const char* filename, size_t* line_count,
+                          struct Request** requests);
+
+/**
+ * Saves an array of Request structures to a CSV file.
+ *
+ * @param filename The name of the CSV file to be created or overwritten.
+ * @param num_requests The number of requests to be saved.
+ * @param requests An array of Request structures to be saved.
+ * @return The result of saving the requests to the CSV file.
+ */
+enum CSV_RESULT save_requests_to_csv(const char* filename, size_t num_requests,
+                                     struct Request* requests);

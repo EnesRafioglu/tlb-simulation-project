@@ -9,6 +9,8 @@
 #include "simulation/simulation.hpp"
 
 int main(int argc, char* argv[]) {
+  int return_code = 0;
+
   // Check if the architecture is supported
   if (check_architecture() != 0) {
     return 1;
@@ -59,14 +61,6 @@ int main(int argc, char* argv[]) {
 
   printf("Number of requests: %lu\n", line_count);
 
-  for (size_t i = 0; i < line_count; i++) {
-    struct Request req;
-    req = requests[i];
-
-    printf("Request %zu: addr=%u, data=%u, we=%d\n", i, req.addr, req.data,
-           req.we);
-  }
-
   // Run the simulation
   struct Result result =
       run_simulation(cnf.cycles, cnf.tlbSize, cnf.tlbLatency, cnf.blocksize,
@@ -79,25 +73,40 @@ int main(int argc, char* argv[]) {
   printf("Simulation had %zu hits\n", result.hits);
   printf("Primitive gate count: %zu\n", result.primitiveGateCount);
 
-  printf("Read requests:\n");
-  for (size_t i = 0; i < line_count; i++) {
-    struct Request req;
-    req = requests[i];
-
-    if (req.we == 0) {
-      printf("Request %zu: addr=%u, data=%u, we=%d\n", i, req.addr, req.data,
-             req.we);
+  // Optionally save the results to a CSV file
+  //? The gotos allow us to add future main code without having to worry about
+  //? executing it in case of an error here -> maintainability
+  if (cnf.outputFile != NULL) {
+    switch (save_requests_to_csv(cnf.outputFile, line_count, requests)) {
+      case CSV_RESULT_SUCCESS:
+        break;
+      case CSV_RESULT_FILE_EXISTS:
+        return_code = 17;
+        goto main_cleanup_and_exit;
+      case CSV_RESULT_IS_DIRECTORY:
+        return_code = 21;
+        goto main_cleanup_and_exit;
+      case CSV_RESULT_PERMISSION_DENIED:
+        return_code = 1;
+        goto main_cleanup_and_exit;
+      case CSV_RESULT_IO_ERROR:
+        return_code = 5;
+        goto main_cleanup_and_exit;
+      default:
+        return_code = 1;
+        goto main_cleanup_and_exit;
     }
   }
 
   // Clean up
+main_cleanup_and_exit:
   free(requests);
 
   //? We don't need to free cnf.traceFile or cnf.inputFile because they are
   //? pointers to the argv array and the argv array is managed by the operating
   //? system.
 
-  return 0;
+  return return_code;
 }
 
 int check_architecture() {

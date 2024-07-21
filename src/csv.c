@@ -8,7 +8,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <sys/types.h>
+#include "util.h"
 
 /**
  * Counts the number of non empty lines in a given file from the current
@@ -410,4 +410,56 @@ parse_csv_error_cleanup:
   free(parsed_requests);
 
   return CSV_RESULT_PARSE_ERROR;
+}
+
+enum CSV_RESULT save_requests_to_csv(const char* filename, size_t num_requests,
+                                     struct Request* requests) {
+  // Do basic checks to see if the file exists and is not a directory
+  enum CSV_RESULT fileStatus = check_file(filename, 0);
+
+  if (fileStatus == CSV_RESULT_FILE_EXISTS) {
+    fprintf(stderr,
+            "WARN: File %s already exists - will overwrite it's contents\n",
+            filename);
+  } else if (fileStatus != CSV_RESULT_SUCCESS) {
+    return fileStatus;
+  }
+
+  // Open the file
+  FILE* file = fopen(filename, "w");
+
+  if (!file) {
+    fprintf(stderr, "Error: Couldn't open output file %s\n", filename);
+
+    return CSV_RESULT_IO_ERROR;
+  }
+
+  // Write the read requests to the file
+  //? 0x literal, % -> format specifier, 08 -> 8 characters wide,
+  //? x -> hexadecimal
+  for (size_t i = 0; i < num_requests; ++i) {
+    if (fprintf(file, "%c,0x%08x,", requests[i].we ? 'W' : 'R',
+                requests[i].addr) < 0) {
+      goto save_requests_to_csv_on_error;
+    }
+
+    if (fprintf(file, "0x%08x", requests[i].data) < 0) {
+      goto save_requests_to_csv_on_error;
+    }
+
+    if (fprintf(file, "\n") < 0) {
+      goto save_requests_to_csv_on_error;
+    }
+  }
+
+  fclose(file);
+  return CSV_RESULT_SUCCESS;
+
+save_requests_to_csv_on_error:
+  // Clean up in case of an error
+  fclose(file);
+
+  fprintf(stderr, "Error: Couldn't write to output file %s\n", filename);
+
+  return CSV_RESULT_IO_ERROR;
 }
