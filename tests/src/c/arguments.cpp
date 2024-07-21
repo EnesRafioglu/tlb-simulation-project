@@ -323,8 +323,8 @@ TEST_F(ParseArgumentsTest, ArgBlocksizeOne) {
 
 TEST_F(ParseArgumentsTest, ArgBlocksizeAboveIntMax) {
   struct Configuration cnf;
-  char* argv[] = {(char*)"./sim", (char*)"--blocksize=2147483648", (char*)"file.csv"};
-  EXPECT_EQ(PARSE_ARG_RESULT_SUCCESS, parse_arguments(3, argv, &cnf));
+  char* argv[] = {(char*)"./sim", (char*)"--tlb-size=0", (char*)"--blocksize=2147483648", (char*)"file.csv"};
+  EXPECT_EQ(PARSE_ARG_RESULT_SUCCESS, parse_arguments(4, argv, &cnf));
 
   // Check configuration
   EXPECT_EQ(cnf.blocksize, 2147483648);
@@ -333,7 +333,7 @@ TEST_F(ParseArgumentsTest, ArgBlocksizeAboveIntMax) {
   std::string output = testing::internal::GetCapturedStdout();
   std::string error = testing::internal::GetCapturedStderr();
   EXPECT_EQ(output, "");
-  EXPECT_EQ(error, "");
+  EXPECT_EQ(error, "WARN: TLB size is set to zero, simulation will not use TLB\n");
 }
 
 TEST_F(ParseArgumentsTest, ArgBlocksizeAboveUIntMax) {
@@ -554,11 +554,23 @@ TEST_F(ParseArgumentsTest, ArgTlbSizeOne) {
 
 TEST_F(ParseArgumentsTest, ArgTlbSizeAboveIntMax) {
   struct Configuration cnf;
-  char* argv[] = {(char*)"./sim", (char*)"--tlb-size=2147483648", (char*)"file.csv"};
-  EXPECT_EQ(PARSE_ARG_RESULT_SUCCESS, parse_arguments(3, argv, &cnf));
+  char* argv[] = {(char*)"./sim", (char*)"--blocksize=4", (char*)"--tlb-size=2147483648", (char*)"file.csv"};
+  EXPECT_EQ(PARSE_ARG_RESULT_ERROR, parse_arguments(4, argv, &cnf));
+
+  // Check error message
+  std::string output = testing::internal::GetCapturedStdout();
+  std::string error = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(output, "");
+  EXPECT_EQ(error, "Error: Address format does not add up to 32 bits\n\n");
+}
+
+TEST_F(ParseArgumentsTest, ArgTlbSizeHighest) {
+  struct Configuration cnf;
+  char* argv[] = {(char*)"./sim", (char*)"--blocksize=4", (char*)"--tlb-size=1073741824", (char*)"file.csv"};
+  EXPECT_EQ(PARSE_ARG_RESULT_SUCCESS, parse_arguments(4, argv, &cnf));
 
   // Check configuration
-  EXPECT_EQ(cnf.tlbSize, 2147483648);
+  EXPECT_EQ(cnf.tlbSize, 1073741824);
 
   // Check error message
   std::string output = testing::internal::GetCapturedStdout();
@@ -880,4 +892,88 @@ TEST_F(ParseArgumentsTest, ArgOutputFileEmpty) {
   std::string error = testing::internal::GetCapturedStderr();
   EXPECT_EQ(output, "");
   EXPECT_EQ(error, "Error: --output requires a value\n\n");
+}
+
+//* valid address format
+
+TEST_F(ParseArgumentsTest, ValidAddressFormat) {
+  struct Configuration cnf;
+  std::string argTlbSize = "--tlb-size=" + std::to_string(1<<16);
+  std::string argBlockSize = "--blocksize=" + std::to_string(1<<16);
+  char* argv[] = {(char*)"./sim", (char*)argBlockSize.data(), (char*)argTlbSize.data(), (char*)"file.csv"};
+  EXPECT_EQ(PARSE_ARG_RESULT_SUCCESS, parse_arguments(4, argv, &cnf));
+
+  // Check configuration
+  EXPECT_EQ(cnf.tlbSize, 1<<16);
+  EXPECT_EQ(cnf.blocksize, 1<<16);
+
+  // Check error message
+  std::string output = testing::internal::GetCapturedStdout();
+  std::string error = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(output, "");
+  EXPECT_EQ(error, "");
+}
+
+TEST_F(ParseArgumentsTest, ValidAddressFormat2) {
+  struct Configuration cnf;
+  std::string argTlbSize = "--tlb-size=" + std::to_string(1<<3);
+  std::string argBlockSize = "--blocksize=" + std::to_string(1<<8);
+  char* argv[] = {(char*)"./sim", (char*)argBlockSize.data(), (char*)argTlbSize.data(), (char*)"file.csv"};
+  EXPECT_EQ(PARSE_ARG_RESULT_SUCCESS, parse_arguments(4, argv, &cnf));
+
+  // Check configuration
+  EXPECT_EQ(cnf.tlbSize, 1<<3);
+  EXPECT_EQ(cnf.blocksize, 1<<8);
+
+  // Check error message
+  std::string output = testing::internal::GetCapturedStdout();
+  std::string error = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(output, "");
+  EXPECT_EQ(error, "");
+}
+
+TEST_F(ParseArgumentsTest, ValidAddressFormatTLBZero) {
+  struct Configuration cnf;
+  std::string argTlbSize = "--tlb-size=" + std::to_string(0);
+  std::string argBlockSize = "--blocksize=" + std::to_string(1<<8);
+  char* argv[] = {(char*)"./sim", (char*)argBlockSize.data(), (char*)argTlbSize.data(), (char*)"file.csv"};
+  EXPECT_EQ(PARSE_ARG_RESULT_SUCCESS, parse_arguments(4, argv, &cnf));
+
+  // Check configuration
+  EXPECT_EQ(cnf.tlbSize, 0);
+  EXPECT_EQ(cnf.blocksize, 1<<8);
+
+  // Check error message
+  std::string output = testing::internal::GetCapturedStdout();
+  std::string error = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(output, "");
+  EXPECT_EQ(error, "WARN: TLB size is set to zero, simulation will not use TLB\n");
+}
+
+TEST_F(ParseArgumentsTest, InvalidAddressFormatMoreIndexThanPage) {
+  struct Configuration cnf;
+  std::string argTlbSize = "--tlb-size=" + std::to_string(1<<16);
+  std::string argBlockSize = "--blocksize=" + std::to_string(1<<17);
+  char* argv[] = {(char*)"./sim", (char*)argBlockSize.data(), (char*)argTlbSize.data(), (char*)"file.csv"};
+  EXPECT_EQ(PARSE_ARG_RESULT_ERROR, parse_arguments(4, argv, &cnf));
+
+  // Check error message
+  std::string output = testing::internal::GetCapturedStdout();
+  std::string error = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(output, "");
+  EXPECT_EQ(error, "Error: Address format does not add up to 32 bits\n\n");
+}
+
+TEST_F(ParseArgumentsTest, InvalidAddressFormatMoreIndexThanPage2) {
+  struct Configuration cnf;
+  std::string argTlbSize = "--tlb-size=" + std::to_string(1<<17);
+  std::string argBlockSize = "--blocksize=" + std::to_string(1<<16);
+  char* argv[] = {(char*)"./sim", (char*)argBlockSize.data(), (char*)argTlbSize.data(), (char*)"file.csv"};
+  EXPECT_EQ(PARSE_ARG_RESULT_ERROR, parse_arguments(4, argv, &cnf));
+
+  // Check error message
+  std::string output = testing::internal::GetCapturedStdout();
+  std::string error = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(output, "");
+  EXPECT_EQ(error, "Error: Address format does not add up to 32 bits\n\n");
 }

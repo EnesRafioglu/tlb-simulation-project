@@ -243,6 +243,17 @@ enum PARSE_ARG_RESULT parse_arguments(int argc, char* argv[],
     return PARSE_ARG_RESULT_ERROR;
   }
 
+  // Ensure that arguments result in a valid address format
+  const int numOffsetBits = ilog2(cnf->blocksize);
+  const int numPageBits = 32 - numOffsetBits;
+  const int numIndexBits = cnf->tlbSize > 0 ? ilog2(cnf->tlbSize) : 0;
+
+  if (numOffsetBits < 2 || numPageBits < 0 || numIndexBits > numPageBits ||
+      numPageBits + numOffsetBits != 32) {
+    fprintf(stderr, "Error: Address format does not add up to 32 bits\n\n");
+
+    return PARSE_ARG_RESULT_ERROR;
+  }
 
   return PARSE_ARG_RESULT_SUCCESS;
 }

@@ -120,7 +120,7 @@ extern "C" Result run_simulation(
   const unsigned int numTagBits = numPageBits - numIndexBits;
   const unsigned int numOffsetBits = std::log2(blocksize);
 
-  if(numTagBits + numIndexBits + numOffsetBits != 32) {
+  if(numIndexBits > numPageBits || numTagBits + numIndexBits + numOffsetBits != 32) {
     std::cerr << "Address format does not add up to 32 bits" << std::endl;
     exit(1);
   };
