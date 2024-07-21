@@ -43,15 +43,15 @@ int main(int argc, char* argv[]) {
   size_t line_count;
   struct Request* requests = NULL;
   switch (parse_csv(cnf.inputFile, &line_count, &requests)) {
-    case PARSE_CSV_RESULT_NO_FILE:
+    case CSV_RESULT_NO_FILE:
       return 2;
-    case PARSE_CSV_RESULT_IS_DIRECTORY:
+    case CSV_RESULT_IS_DIRECTORY:
       return 21;
-    case PARSE_CSV_RESULT_PERMISSION_DENIED:
+    case CSV_RESULT_PERMISSION_DENIED:
       return 1;
-    case PARSE_CSV_RESULT_IO_ERROR:
+    case CSV_RESULT_IO_ERROR:
       return 5;
-    case PARSE_CSV_RESULT_PARSE_ERROR:
+    case CSV_RESULT_PARSE_ERROR:
       return 22;
     default:
       break;

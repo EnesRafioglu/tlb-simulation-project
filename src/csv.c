@@ -5,9 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 
-#include "util.h"
 #include <sys/types.h>
 
 /**
@@ -94,7 +94,7 @@ char* tokenize_string(char* str) {
  * @param token The token to be trimmed.
  * @return A pointer to the trimmed token.
  */
-char* trim_token (char* token) {
+char* trim_token(char* token) {
   if (strlen(token) > 1) {
     if (token[0] == '\"') {
       if (token[strlen(token) - 1] == '\"') {
@@ -156,35 +156,65 @@ int parse_number_with_error_messages(const char* token, uint32_t* value,
   return 1;
 }
 
-enum PARSE_CSV_RESULT parse_csv(const char* filename, size_t* line_count,
-                                struct Request** requests_out) {
-  // Do basic checks to see if the file exists and is not a directory
+/**
+ * Checks if a file exists and has the correct permissions.
+ *
+ * A file that exists but wasn't expected will return `CSV_RESULT_FILE_EXISTS`
+ * but no error message will be printed. This is to allow the caller to decide
+ * whether to overwrite the file or not.
+ *
+ * @param filename The name of the file to check.
+ * @param should_exist Flag indicating whether the file should exist or not.
+ * @return The result of the file check.
+ */
+enum CSV_RESULT check_file(const char* filename, int should_exist) {
+  // Do basic checks to see if the file exists/doesn't exist and is not a
+  // directory
   struct stat st;
   if (stat(filename, &st) == -1) {
     switch (errno) {
       case ENOENT:
+        if (!should_exist) {
+          return CSV_RESULT_SUCCESS;
+        }
+
         fprintf(stderr, "Error: File %s does'nt exist\n", filename);
 
-        return PARSE_CSV_RESULT_NO_FILE;
+        return CSV_RESULT_NO_FILE;
       case EACCES:
         fprintf(stderr, "Error: Permission denied for file %s\n", filename);
 
-        return PARSE_CSV_RESULT_PERMISSION_DENIED;
+        return CSV_RESULT_PERMISSION_DENIED;
       default:
         fprintf(stderr, "Error: Couldn't open input file %s\n", filename);
 
-        return PARSE_CSV_RESULT_IO_ERROR;
+        return CSV_RESULT_IO_ERROR;
     }
   }
 
   if (S_ISDIR(st.st_mode)) {
     fprintf(stderr, "Error: %s is a directory, not a file\n", filename);
 
-    return PARSE_CSV_RESULT_IS_DIRECTORY;
+    return CSV_RESULT_IS_DIRECTORY;
   } else if (!S_ISREG(st.st_mode)) {
     fprintf(stderr, "Error: %s is not a regular file\n", filename);
 
-    return PARSE_CSV_RESULT_IO_ERROR;
+    return CSV_RESULT_IO_ERROR;
+  }
+
+  if (!should_exist) {
+    return CSV_RESULT_FILE_EXISTS;
+  }
+
+  return CSV_RESULT_SUCCESS;
+}
+
+enum CSV_RESULT parse_csv(const char* filename, size_t* line_count,
+                          struct Request** requests_out) {
+  // Do basic checks to see if the file exists and is not a directory
+  enum CSV_RESULT fileStatus = check_file(filename, 1);
+  if (fileStatus != CSV_RESULT_SUCCESS) {
+    return fileStatus;
   }
 
   // Open the file
@@ -194,19 +224,19 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, size_t* line_count,
     // error (don't try to account for races here as it's an error anyway)
     fprintf(stderr, "Error: Couldn't open input file %s\n", filename);
 
-    return PARSE_CSV_RESULT_IO_ERROR;
+    return CSV_RESULT_IO_ERROR;
   }
 
   // Count the number of lines in the file to allocate the correct amount of
   // memory
-  
+
   if (count_lines(file, line_count)) {
     fclose(file);
-    return PARSE_CSV_RESULT_IO_ERROR;
+    return CSV_RESULT_IO_ERROR;
   }
 
   if (*line_count == 0) {
-    return PARSE_CSV_RESULT_SUCCESS;
+    return CSV_RESULT_SUCCESS;
   }
 
   // Allocate memory for the requests
@@ -217,7 +247,7 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, size_t* line_count,
     fprintf(stderr, "Error: Couldn't allocate memory for requests\n");
     fclose(file);
 
-    return PARSE_CSV_RESULT_PARSE_ERROR;
+    return CSV_RESULT_PARSE_ERROR;
   }
 
   // longest possible line is 37 characters long
@@ -272,19 +302,19 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, size_t* line_count,
 
       // check for empty tokens
       if (strlen(token) == 0) {
-
-        // empty token is only allowed for read requests 
-        // and only at the end of the line to represent 
+        // empty token is only allowed for read requests
+        // and only at the end of the line to represent
         // an empty data field
         if ((tokenize_string(NULL) == NULL) && (request.we == 0)) {
           token_count++;
           break;
         }
-        
-        fprintf(stderr,
-                "Error: Empty token encountered. Could be a comma at the"
-                " beginning of a line or multiple commas in a row. (line: %ld)\n",
-                *line_count + 1);
+
+        fprintf(
+            stderr,
+            "Error: Empty token encountered. Could be a comma at the"
+            " beginning of a line or multiple commas in a row. (line: %ld)\n",
+            *line_count + 1);
 
         goto parse_csv_error_cleanup;
       }
@@ -322,13 +352,11 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, size_t* line_count,
 
         // check if the address is 32-bit aligned
         if (request.addr & 0x3) {
-          fprintf(stderr,
-                  "Error: Address must be 32-bit aligned (line: %ld)\n",
+          fprintf(stderr, "Error: Address must be 32-bit aligned (line: %ld)\n",
                   *line_count + 1);
 
           goto parse_csv_error_cleanup;
         }
-
 
       } else if (token_count == 2) {
         // check if we is set
@@ -370,7 +398,7 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, size_t* line_count,
   *requests_out = parsed_requests;
 
   fclose(file);
-  return PARSE_CSV_RESULT_SUCCESS;
+  return CSV_RESULT_SUCCESS;
 
 // Clean up in case of an error
 parse_csv_error_cleanup:
@@ -381,5 +409,5 @@ parse_csv_error_cleanup:
   fclose(file);
   free(parsed_requests);
 
-  return PARSE_CSV_RESULT_PARSE_ERROR;
+  return CSV_RESULT_PARSE_ERROR;
 }

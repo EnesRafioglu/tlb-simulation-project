@@ -1232,7 +1232,7 @@ TEST(ParseCsvTest, BasicTest){
     struct Request* requests = NULL;
     testing::internal::CaptureStderr();
 
-    EXPECT_EQ(parse_csv("../examples/Legal_basic.csv", &line_count, &requests), PARSE_CSV_RESULT_SUCCESS);
+    EXPECT_EQ(parse_csv("../examples/Legal_basic.csv", &line_count, &requests), CSV_RESULT_SUCCESS);
     std::string error = testing::internal::GetCapturedStderr();
 
     EXPECT_EQ(line_count, 10);
@@ -1255,7 +1255,7 @@ TEST(ParseCsvTest, MediumTest) {
     struct Request* requests = NULL;
     testing::internal::CaptureStderr();
 
-    EXPECT_EQ(parse_csv("../examples/Legal_medium.csv", &line_count, &requests), PARSE_CSV_RESULT_SUCCESS);
+    EXPECT_EQ(parse_csv("../examples/Legal_medium.csv", &line_count, &requests), CSV_RESULT_SUCCESS);
     std::string error = testing::internal::GetCapturedStderr();
 
     EXPECT_EQ(line_count, 200);
@@ -1278,7 +1278,7 @@ TEST(ParseCsvTest, LargeTest) {
     struct Request* requests = NULL;
     testing::internal::CaptureStderr();
 
-    EXPECT_EQ(parse_csv("../examples/Legal_large.csv", &line_count, &requests), PARSE_CSV_RESULT_SUCCESS);
+    EXPECT_EQ(parse_csv("../examples/Legal_large.csv", &line_count, &requests), CSV_RESULT_SUCCESS);
     std::string error = testing::internal::GetCapturedStderr();
 
     EXPECT_EQ(line_count, 1000);
@@ -1302,7 +1302,7 @@ TEST(ParseCsvTest, IOError) {
     struct Request* requests = NULL;
     testing::internal::CaptureStderr();
 
-    EXPECT_EQ(parse_csv(NULL, &line_count, &requests), PARSE_CSV_RESULT_IO_ERROR);
+    EXPECT_EQ(parse_csv(NULL, &line_count, &requests), CSV_RESULT_IO_ERROR);
 
     std::string error = testing::internal::GetCapturedStderr();
     EXPECT_EQ(error, "Error: Couldn't open input file (null)\n");
@@ -1313,7 +1313,7 @@ TEST(ParseCsvTest, NoFile){
     struct Request* requests = NULL;
     testing::internal::CaptureStderr();
 
-    EXPECT_EQ(parse_csv("nonExistentFile.csv", &line_count, &requests), PARSE_CSV_RESULT_NO_FILE);
+    EXPECT_EQ(parse_csv("nonExistentFile.csv", &line_count, &requests), CSV_RESULT_NO_FILE);
 
     std::string error = testing::internal::GetCapturedStderr();
     EXPECT_EQ(error, "Error: File nonExistentFile.csv does'nt exist\n");
@@ -1324,7 +1324,7 @@ TEST(ParseCsvTest, IsDirectory) {
     struct Request* requests = NULL;
     testing::internal::CaptureStderr();
 
-    EXPECT_EQ(parse_csv("../examples", &line_count, &requests), PARSE_CSV_RESULT_IS_DIRECTORY);
+    EXPECT_EQ(parse_csv("../examples", &line_count, &requests), CSV_RESULT_IS_DIRECTORY);
 
     std::string error = testing::internal::GetCapturedStderr();
     EXPECT_EQ(error, "Error: ../examples is a directory, not a file\n");
@@ -1335,7 +1335,7 @@ TEST(ParseCsvTest, EmptyLines) {
     struct Request* requests = NULL;
     testing::internal::CaptureStderr();
 
-    EXPECT_EQ(parse_csv("../examples/Illegal_emptyLine.csv", &line_count, &requests), PARSE_CSV_RESULT_PARSE_ERROR);
+    EXPECT_EQ(parse_csv("../examples/Illegal_emptyLine.csv", &line_count, &requests), CSV_RESULT_PARSE_ERROR);
     std::string error = testing::internal::GetCapturedStderr();
 
     EXPECT_EQ(error, "Error: Empty lines are not allowed (except for the last line) "
@@ -1349,7 +1349,7 @@ TEST(ParseCsvTest, InvalidWriteEnableChar) {
     struct Request* requests = NULL;
     testing::internal::CaptureStderr();
 
-    EXPECT_EQ(parse_csv("../examples/Illegal_invalidWriteEnable.csv", &line_count, &requests), PARSE_CSV_RESULT_PARSE_ERROR);
+    EXPECT_EQ(parse_csv("../examples/Illegal_invalidWriteEnable.csv", &line_count, &requests), CSV_RESULT_PARSE_ERROR);
     std::string error = testing::internal::GetCapturedStderr();
 
     EXPECT_EQ(error,"Error: Accesstype must be either W or R not 'k' (line: 2)\n"
@@ -1362,7 +1362,7 @@ TEST(ParseCsvTest, WeTooManyChars) {
     struct Request* requests = NULL;
     testing::internal::CaptureStderr();
 
-    EXPECT_EQ(parse_csv("../examples/Illegal_weTooManyChars.csv", &line_count, &requests), PARSE_CSV_RESULT_PARSE_ERROR);
+    EXPECT_EQ(parse_csv("../examples/Illegal_weTooManyChars.csv", &line_count, &requests), CSV_RESULT_PARSE_ERROR);
     std::string error = testing::internal::GetCapturedStderr();
 
     EXPECT_EQ(error, "Error: Accesstype must be a single character with or "
@@ -1376,7 +1376,7 @@ TEST(ParseCsvTest, TooManyCharsInLine) {
     struct Request* requests = NULL;
     testing::internal::CaptureStderr();
 
-    EXPECT_EQ(parse_csv("../examples/Illegal_lineTooLong.csv", &line_count, &requests), PARSE_CSV_RESULT_PARSE_ERROR);
+    EXPECT_EQ(parse_csv("../examples/Illegal_lineTooLong.csv", &line_count, &requests), CSV_RESULT_PARSE_ERROR);
     std::string error = testing::internal::GetCapturedStderr();
 
     EXPECT_EQ(error, "Error: Too many characters encountered. Could be unnecessary "
@@ -1390,7 +1390,7 @@ TEST(ParseCsvTest, TooFewTokens) {
     struct Request* requests = NULL;
     testing::internal::CaptureStderr();
 
-    EXPECT_EQ(parse_csv("../examples/Illegal_tooFewTokens.csv", &line_count, &requests), PARSE_CSV_RESULT_PARSE_ERROR);
+    EXPECT_EQ(parse_csv("../examples/Illegal_tooFewTokens.csv", &line_count, &requests), CSV_RESULT_PARSE_ERROR);
     std::string error = testing::internal::GetCapturedStderr();
 
     EXPECT_EQ(error, "Error: Too few tokens in line (line: 2)\n"
@@ -1403,7 +1403,7 @@ TEST(ParseCsvTest, TooManyTokens) {
     struct Request* requests = NULL;
     testing::internal::CaptureStderr();
 
-    EXPECT_EQ(parse_csv("../examples/Illegal_tooManyTokens.csv", &line_count, &requests), PARSE_CSV_RESULT_PARSE_ERROR);
+    EXPECT_EQ(parse_csv("../examples/Illegal_tooManyTokens.csv", &line_count, &requests), CSV_RESULT_PARSE_ERROR);
     std::string error = testing::internal::GetCapturedStderr();
 
     EXPECT_EQ(error, "Error: Too many tokens in line (line: 2)\n"
@@ -1416,7 +1416,7 @@ TEST(ParseCsvTest, ReadWithData) {
     struct Request* requests = NULL;
     testing::internal::CaptureStderr();
 
-    EXPECT_EQ(parse_csv("../examples/Illegal_readWithData.csv", &line_count, &requests), PARSE_CSV_RESULT_PARSE_ERROR);
+    EXPECT_EQ(parse_csv("../examples/Illegal_readWithData.csv", &line_count, &requests), CSV_RESULT_PARSE_ERROR);
     std::string error = testing::internal::GetCapturedStderr();
 
     EXPECT_EQ(error, "Error: Read type shouldn't have data (line: 2)\n"
@@ -1429,7 +1429,7 @@ TEST(ParseCsvTest, EmptyToken) {
     struct Request* requests = NULL;
     testing::internal::CaptureStderr();
 
-    EXPECT_EQ(parse_csv("../examples/Illegal_emptyField.csv", &line_count, &requests), PARSE_CSV_RESULT_PARSE_ERROR);
+    EXPECT_EQ(parse_csv("../examples/Illegal_emptyField.csv", &line_count, &requests), CSV_RESULT_PARSE_ERROR);
     std::string error = testing::internal::GetCapturedStderr();
 
     EXPECT_EQ(error,"Error: Empty token encountered. Could be a comma at the"
@@ -1443,7 +1443,7 @@ TEST(ParseCsvTest, IsAligned) {
     struct Request* requests = NULL;
     testing::internal::CaptureStderr();
 
-    EXPECT_EQ(parse_csv("../examples/Illegal_notAligned.csv", &line_count, &requests), PARSE_CSV_RESULT_PARSE_ERROR);
+    EXPECT_EQ(parse_csv("../examples/Illegal_notAligned.csv", &line_count, &requests), CSV_RESULT_PARSE_ERROR);
     std::string error = testing::internal::GetCapturedStderr();
 
     EXPECT_EQ(error, "Error: Address must be 32-bit aligned (line: 1)\n"

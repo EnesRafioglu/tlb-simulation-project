@@ -5,21 +5,24 @@
 #include "shared_types.h"
 
 /**
- * @brief Enumeration representing the possible results of parsing a CSV file.
+ * @brief Enumeration representing the possible results of interacting with a
+ * CSV file.
  */
-enum PARSE_CSV_RESULT {
+enum CSV_RESULT {
   /** The CSV file was parsed successfully. */
-  PARSE_CSV_RESULT_SUCCESS,
+  CSV_RESULT_SUCCESS,
   /** The CSV file does not exist. */
-  PARSE_CSV_RESULT_NO_FILE,
+  CSV_RESULT_NO_FILE,
+  /** The CSV file already exists. */
+  CSV_RESULT_FILE_EXISTS,
   /** The given path is a directory, not a file. */
-  PARSE_CSV_RESULT_IS_DIRECTORY,
+  CSV_RESULT_IS_DIRECTORY,
   /** The CSV file could not be opened because of lacking permissions. */
-  PARSE_CSV_RESULT_PERMISSION_DENIED,
+  CSV_RESULT_PERMISSION_DENIED,
   /** An I/O error occurred while trying to read the CSV file. */
-  PARSE_CSV_RESULT_IO_ERROR,
+  CSV_RESULT_IO_ERROR,
   /** An error occurred while parsing the CSV file. */
-  PARSE_CSV_RESULT_PARSE_ERROR
+  CSV_RESULT_PARSE_ERROR
 };
 
 /**
