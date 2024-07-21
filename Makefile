@@ -40,7 +40,7 @@ endif
 
 #* Build instructions
 
-all: release docs
+all: release
 
 # Create build directory if it does not exist
 mkbuilddir:
