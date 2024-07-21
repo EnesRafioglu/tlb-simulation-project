@@ -69,6 +69,26 @@ struct SimulationTestParams {
       expectGateCount(expectGateCount),
       expected(expected),
       expected_data(expected_reads) {}
+  
+  friend std::ostream& operator<<(std::ostream& os, const SimulationTestParams& dt) {
+    os << "[" << dt.testName << "]"
+      << "\n\tCycles: " << dt.cycles 
+      << "\n\tTLB Size: " << dt.tlbSize 
+      << "\n\tTLB Latency: " << dt.tlbsLatency 
+      << "\n\tBlocksize: " << dt.blocksize 
+      << "\n\tV2B Block Offset: " << dt.v2bBlockOffset 
+      << "\n\tMemory Latency: " << dt.memoryLatency 
+      << "\n\tNumber of Requests: " << dt.numRequests 
+      << "\n\tExpect Gate Count: " << dt.expectGateCount 
+      << "\n\tExpected Result: "
+      << "\n\t\tCycles: " << dt.expected.cycles
+      << "\n\t\tMisses: " << dt.expected.misses
+      << "\n\t\tHits: " << dt.expected.hits
+      << "\n\t\tPrimitive Gate Count: " << dt.expected.primitiveGateCount;
+      // << "\n\tExpected Reads: " << dt.expected_data;
+
+    return os;
+  }
 };
 
 /**
@@ -1770,7 +1790,10 @@ std::vector<SimulationTestParams> generate_random_tests(const std::string& baseN
 SimulationTestParams generate_specific_random_test(const std::string& baseName, int seed, RandomTestDistributions distributions) {
   std::string name = baseName + "__seed__" + std::to_string(seed);
 
-  return generate_random_test(name, seed, distributions);
+  SimulationTestParams test = generate_random_test(name, seed, distributions);
+  std::cout << "Specific Random Test: " << test << std::endl;
+
+  return test;
 }
 
 INSTANTIATE_TEST_SUITE_P(
