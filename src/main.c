@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
   }
 
   // Parse the input file
-  unsigned int line_count;
+  size_t line_count;
   struct Request* requests = NULL;
   switch (parse_csv(cnf.inputFile, &line_count, &requests)) {
     case PARSE_CSV_RESULT_NO_FILE:
@@ -57,12 +57,8 @@ int main(int argc, char* argv[]) {
       break;
   }
 
-  printf("Number of requests: %u\n", line_count);
-  if (requests == NULL) {
-    printf("Error: Couldn't parse input file %s\n", cnf.inputFile);
-    return 1;
-  }
-
+  printf("Number of requests: %lu\n", line_count);
+  
   for (size_t i = 0; i < line_count; i++) {
     struct Request req;
     req = requests[i];

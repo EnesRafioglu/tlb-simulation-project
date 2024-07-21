@@ -13,9 +13,12 @@ using namespace sc_core;
 size_t gateCount (unsigned tlbSize, unsigned blocksize) {
   unsigned int numIndexBits = std::log2(tlbSize);
   unsigned int numCachelines = tlbSize;
-  unsigned int numTagBits = 32 - numIndexBits;
 
   unsigned int frameNumberBits = 32 - std::log2(blocksize);
+
+  unsigned int numTagBits = frameNumberBits - numIndexBits;
+
+  
 
   // the cache line might store the tag the frameNumber and a valid bit
   unsigned int cacheLineSize = numTagBits + frameNumberBits + 1;
@@ -30,7 +33,7 @@ size_t gateCount (unsigned tlbSize, unsigned blocksize) {
 
   // the decoder is used to select the right cache line with the index Bits as input
   // decoder with n inputs has 2^n outputs. Therefore we need 2^n and gates and n not gates.
-  size_t decoderGates = (1 << numIndexBits) + numIndexBits;
+  size_t decoderGates = (1 << numIndexBits)*(numIndexBits - 1) + numIndexBits;
   size_t overwriteGates = decoderGates + numCachelines;
 
   // compare the tag of the cache line with the tag of the virtual address
@@ -38,7 +41,8 @@ size_t gateCount (unsigned tlbSize, unsigned blocksize) {
   // a OR operation to check if the result is zero.
   // From ERA lecture it is known that a SUB operation can be implemented with 
   // a Full Adder (5n), where all bits of the second operand are inverted (n) 
-  size_t comparatorGates = 6 * numTagBits + 1; 
+
+  size_t comparatorGates = 7 * numTagBits - 1 ; 
 
   return cacheStoreGates + muxGates + decoderGates + overwriteGates + comparatorGates;
 }
