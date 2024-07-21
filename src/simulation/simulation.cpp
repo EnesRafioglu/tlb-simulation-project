@@ -71,7 +71,7 @@ size_t gateCount(unsigned tlbSize, unsigned blocksize) {
  */
 static bool didSimulationRun = false;
 
-Result run_simulation(
+extern "C" Result run_simulation(
   int cycles,
   unsigned tlbSize,
   unsigned tlbsLatency,
