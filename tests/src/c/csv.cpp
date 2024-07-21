@@ -1228,7 +1228,7 @@ uint32_t basic_requests[10][3] = {
 };
 
 TEST(ParseCsvTest, BasicTest){
-    unsigned int line_count;
+    size_t line_count;
     struct Request* requests = NULL;
     testing::internal::CaptureStderr();
 
@@ -1251,7 +1251,7 @@ TEST(ParseCsvTest, BasicTest){
 }
 
 TEST(ParseCsvTest, MediumTest) {
-    unsigned int line_count;
+    size_t line_count;
     struct Request* requests = NULL;
     testing::internal::CaptureStderr();
 
@@ -1274,7 +1274,7 @@ TEST(ParseCsvTest, MediumTest) {
 }
 
 TEST(ParseCsvTest, LargeTest) {
-    unsigned int line_count;
+    size_t line_count;
     struct Request* requests = NULL;
     testing::internal::CaptureStderr();
 
@@ -1298,7 +1298,7 @@ TEST(ParseCsvTest, LargeTest) {
 }
 
 TEST(ParseCsvTest, IOError) {
-    unsigned int line_count;
+    size_t line_count;
     struct Request* requests = NULL;
     testing::internal::CaptureStderr();
 
@@ -1309,7 +1309,7 @@ TEST(ParseCsvTest, IOError) {
 }
 
 TEST(ParseCsvTest, NoFile){
-    unsigned int line_count;
+    size_t line_count;
     struct Request* requests = NULL;
     testing::internal::CaptureStderr();
 
@@ -1320,7 +1320,7 @@ TEST(ParseCsvTest, NoFile){
 }
 
 TEST(ParseCsvTest, IsDirectory) {
-    unsigned int line_count;
+    size_t line_count;
     struct Request* requests = NULL;
     testing::internal::CaptureStderr();
 
@@ -1331,7 +1331,7 @@ TEST(ParseCsvTest, IsDirectory) {
 }
 
 TEST(ParseCsvTest, EmptyLines) {
-    unsigned int line_count;
+    size_t line_count;
     struct Request* requests = NULL;
     testing::internal::CaptureStderr();
 
@@ -1341,11 +1341,11 @@ TEST(ParseCsvTest, EmptyLines) {
     EXPECT_EQ(error, "Error: Empty lines are not allowed (except for the last line) "
               "(line: 3)\n"
               "\texample inputs: "
-            "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n");
+            "R,0x00000000,\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n");
 }
 
 TEST(ParseCsvTest, InvalidWriteEnableChar) {
-    unsigned int line_count;
+    size_t line_count;
     struct Request* requests = NULL;
     testing::internal::CaptureStderr();
 
@@ -1354,11 +1354,11 @@ TEST(ParseCsvTest, InvalidWriteEnableChar) {
 
     EXPECT_EQ(error,"Error: Accesstype must be either W or R not 'k' (line: 2)\n"
               "\texample inputs: "
-            "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n");
+            "R,0x00000000,\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n");
 }
 
 TEST(ParseCsvTest, WeTooManyChars) {
-    unsigned int line_count;
+    size_t line_count;
     struct Request* requests = NULL;
     testing::internal::CaptureStderr();
 
@@ -1368,11 +1368,11 @@ TEST(ParseCsvTest, WeTooManyChars) {
     EXPECT_EQ(error, "Error: Accesstype must be a single character with or "
                   "without quotes (line: 3)\n"
               "\texample inputs: "
-            "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n");
+            "R,0x00000000,\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n");
 }
 
 TEST(ParseCsvTest, TooManyCharsInLine) {
-    unsigned int line_count;
+    size_t line_count;
     struct Request* requests = NULL;
     testing::internal::CaptureStderr();
 
@@ -1382,11 +1382,11 @@ TEST(ParseCsvTest, TooManyCharsInLine) {
     EXPECT_EQ(error, "Error: Too many characters encountered. Could be unnecessary "
               "white spaces (line: 1)\n"
               "\texample inputs: "
-            "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n");
+            "R,0x00000000,\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n");
 }
 
 TEST(ParseCsvTest, TooFewTokens) {
-    unsigned int line_count;
+    size_t line_count;
     struct Request* requests = NULL;
     testing::internal::CaptureStderr();
 
@@ -1395,11 +1395,11 @@ TEST(ParseCsvTest, TooFewTokens) {
 
     EXPECT_EQ(error, "Error: Too few tokens in line (line: 2)\n"
               "\texample inputs: "
-            "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n");
+            "R,0x00000000,\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n");
 }
 
 TEST(ParseCsvTest, TooManyTokens) {
-    unsigned int line_count;
+    size_t line_count;
     struct Request* requests = NULL;
     testing::internal::CaptureStderr();
 
@@ -1408,11 +1408,11 @@ TEST(ParseCsvTest, TooManyTokens) {
 
     EXPECT_EQ(error, "Error: Too many tokens in line (line: 2)\n"
               "\texample inputs: "
-            "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n");
+            "R,0x00000000,\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n");
 }
 
 TEST(ParseCsvTest, ReadWithData) {
-    unsigned int line_count;
+    size_t line_count;
     struct Request* requests = NULL;
     testing::internal::CaptureStderr();
 
@@ -1421,11 +1421,11 @@ TEST(ParseCsvTest, ReadWithData) {
 
     EXPECT_EQ(error, "Error: Read type shouldn't have data (line: 2)\n"
               "\texample inputs: "
-            "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n");
+            "R,0x00000000,\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n");
 }
 
 TEST(ParseCsvTest, EmptyToken) {
-    unsigned int line_count;
+    size_t line_count;
     struct Request* requests = NULL;
     testing::internal::CaptureStderr();
 
@@ -1435,11 +1435,11 @@ TEST(ParseCsvTest, EmptyToken) {
     EXPECT_EQ(error,"Error: Empty token encountered. Could be a comma at the"
                 " beginning of a line or multiple commas in a row. (line: 2)\n"
               "\texample inputs: "
-            "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n");
+            "R,0x00000000,\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n");
 }
 
 TEST(ParseCsvTest, IsAligned) {
-    unsigned int line_count;
+    size_t line_count;
     struct Request* requests = NULL;
     testing::internal::CaptureStderr();
 
@@ -1448,5 +1448,5 @@ TEST(ParseCsvTest, IsAligned) {
 
     EXPECT_EQ(error, "Error: Address must be 32-bit aligned (line: 1)\n"
               "\texample inputs: "
-            "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n");
+            "R,0x00000000,\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n");
 }

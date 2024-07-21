@@ -20,7 +20,7 @@
  * @param file The file to be read.
  * @return 0 on success, 1 on failure.
  */
-int count_lines(FILE* file, unsigned int* lines) {
+int count_lines(FILE* file, size_t* lines) {
   // Save the current position in the file
   off_t pos = ftello(file);
   if (pos == -1) {
@@ -156,7 +156,7 @@ int parse_number_with_error_messages(const char* token, uint32_t* value,
   return 1;
 }
 
-enum PARSE_CSV_RESULT parse_csv(const char* filename, unsigned int* line_count,
+enum PARSE_CSV_RESULT parse_csv(const char* filename, size_t* line_count,
                                 struct Request** requests_out) {
   // Do basic checks to see if the file exists and is not a directory
   struct stat st;
@@ -232,7 +232,7 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, unsigned int* line_count,
     if (buffer[0] == '\n' || buffer[0] == '\r') {
       fprintf(stderr,
               "Error: Empty lines are not allowed (except for the last line) "
-              "(line: %d)\n",
+              "(line: %ld)\n",
               *line_count + 1);
 
       goto parse_csv_error_cleanup;
@@ -242,7 +242,7 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, unsigned int* line_count,
     if (strlen(buffer) > 37) {
       fprintf(stderr,
               "Error: Too many characters encountered. Could be unnecessary "
-              "white spaces (line: %d)\n",
+              "white spaces (line: %ld)\n",
               *line_count + 1);
 
       goto parse_csv_error_cleanup;
@@ -277,12 +277,13 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, unsigned int* line_count,
         // and only at the end of the line to represent 
         // an empty data field
         if ((tokenize_string(NULL) == NULL) && (request.we == 0)) {
+          token_count++;
           break;
         }
         
         fprintf(stderr,
                 "Error: Empty token encountered. Could be a comma at the"
-                " beginning of a line or multiple commas in a row. (line: %d)\n",
+                " beginning of a line or multiple commas in a row. (line: %ld)\n",
                 *line_count + 1);
 
         goto parse_csv_error_cleanup;
@@ -296,7 +297,7 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, unsigned int* line_count,
           } else {
             fprintf(stderr,
                     "Error: Accesstype must be either W or R not '%c' (line: "
-                    "%d)\n",
+                    "%ld)\n",
                     token[0], *line_count + 1);
 
             goto parse_csv_error_cleanup;
@@ -305,7 +306,7 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, unsigned int* line_count,
         } else {
           fprintf(stderr,
                   "Error: Accesstype must be a single character with or "
-                  "without quotes (line: %d)\n",
+                  "without quotes (line: %ld)\n",
                   *line_count + 1);
 
           goto parse_csv_error_cleanup;
@@ -322,7 +323,7 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, unsigned int* line_count,
         // check if the address is 32-bit aligned
         if (request.addr & 0x3) {
           fprintf(stderr,
-                  "Error: Address must be 32-bit aligned (line: %d)\n",
+                  "Error: Address must be 32-bit aligned (line: %ld)\n",
                   *line_count + 1);
 
           goto parse_csv_error_cleanup;
@@ -339,13 +340,13 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, unsigned int* line_count,
           }
 
         } else {
-          fprintf(stderr, "Error: Read type shouldn't have data (line: %d)\n",
+          fprintf(stderr, "Error: Read type shouldn't have data (line: %ld)\n",
                   *line_count + 1);
 
           goto parse_csv_error_cleanup;
         }
       } else {
-        fprintf(stderr, "Error: Too many tokens in line (line: %d)\n",
+        fprintf(stderr, "Error: Too many tokens in line (line: %ld)\n",
                 *line_count + 1);
 
         goto parse_csv_error_cleanup;
@@ -355,8 +356,8 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, unsigned int* line_count,
       token_count++;
     }
 
-    if (token_count < 2 || ((request.we == 1) && (token_count < 3))) {
-      fprintf(stderr, "Error: Too few tokens in line (line: %d)\n",
+    if ((token_count < 3)) {
+      fprintf(stderr, "Error: Too few tokens in line (line: %ld)\n",
               *line_count + 1);
 
       goto parse_csv_error_cleanup;
@@ -375,7 +376,7 @@ enum PARSE_CSV_RESULT parse_csv(const char* filename, unsigned int* line_count,
 parse_csv_error_cleanup:
   fprintf(stderr,
           "\texample inputs: "
-          "R,0x00000000\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n");
+          "R,0x00000000,\n\t\t\tW,1,0x1337\n\t\t\t\"W\",00377,0x433c7\n");
 
   fclose(file);
   free(parsed_requests);
