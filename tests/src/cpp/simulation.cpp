@@ -1805,7 +1805,7 @@ INSTANTIATE_TEST_SUITE_P(
   testing::ValuesIn(
     generate_random_tests(
       "TotallyRandom",
-      150,
+      1000,
       RandomTestDistributions(
         // Cycles
         std::uniform_int_distribution<>(1000, 1000000),
@@ -1821,9 +1821,9 @@ INSTANTIATE_TEST_SUITE_P(
         // Request Type
         std::uniform_int_distribution<>(0, 1),
         // Address
-        std::uniform_int_distribution<>(0, 0xFFFFFFFF),
+        std::uniform_int_distribution<>(0, std::numeric_limits<int>::max()),
         // Data
-        std::uniform_int_distribution<>(0, 0xFFFFFFFF)
+        std::uniform_int_distribution<>(0, std::numeric_limits<int>::max())
       )
     )
   ),
@@ -1852,9 +1852,9 @@ INSTANTIATE_TEST_SUITE_P(
         // Request Type
         std::uniform_int_distribution<>(0, 1),
         // Address
-        std::uniform_int_distribution<>(0, 0xFFFFFFFF),
+        std::uniform_int_distribution<>(0, std::numeric_limits<int>::max()),
         // Data
-        std::uniform_int_distribution<>(0, 0xFFFFFFFF)
+        std::uniform_int_distribution<>(0, std::numeric_limits<int>::max())
       ),
       false
     )
