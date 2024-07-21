@@ -68,9 +68,16 @@ $(BUILD_DIR)/%.o: %.cpp $(HEADERS_C) $(HEADERS_CPP)
 $(OUTPUT): $(OBJECTS_C) $(OBJECTS_CPP)
 	$(COMPILER_CPP) $(COMPILER_FLAGS_CPP) $(OBJECTS_C) $(OBJECTS_CPP) $(LINKER_FLAGS) -o $(OUTPUT)
 
+# Generate doxygen documentation
+doc:
+	doxygen Doxyfile
+
+dcos: doc # Alias for doc
+
 # Clean up any previous build
 clean:
 	rm -rf $(BUILD_DIR)
 	rm -f $(OUTPUT)
+	rm -rf docs
 
 .PHONY: all debug release clean

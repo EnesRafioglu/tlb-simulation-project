@@ -4,6 +4,7 @@
 *.out
 *.exe
 build/
+docs/
 tla
 tlb
 __pycache__
