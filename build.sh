@@ -3,7 +3,7 @@
 set -e
 
 # Build in release mode
-ls ../systemc
+ls "/usr/local/include"
 # make release
 
 printf "\n\n***Build successful***\n\n"
