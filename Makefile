@@ -40,7 +40,7 @@ endif
 
 #* Build instructions
 
-all: debug
+all: release docs
 
 # Create build directory if it does not exist
 mkbuilddir:
@@ -72,7 +72,7 @@ $(OUTPUT): $(OBJECTS_C) $(OBJECTS_CPP)
 doc:
 	doxygen Doxyfile
 
-dcos: doc # Alias for doc
+docs: doc # Alias for doc
 
 # Clean up any previous build
 clean:
