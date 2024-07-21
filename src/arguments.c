@@ -250,7 +250,9 @@ enum PARSE_ARG_RESULT parse_arguments(int argc, char* argv[],
 
   if (numOffsetBits < 2 || numPageBits < 0 || numIndexBits > numPageBits ||
       numPageBits + numOffsetBits != 32) {
-    fprintf(stderr, "Error: Address format does not add up to 32 bits\n\n");
+    fprintf(stderr,
+            "Error: Address format does not add up to 32 bits - please adjust "
+            "blocksize and tlb-size\n\n");
 
     return PARSE_ARG_RESULT_ERROR;
   }

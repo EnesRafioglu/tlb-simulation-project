@@ -561,7 +561,7 @@ TEST_F(ParseArgumentsTest, ArgTlbSizeAboveIntMax) {
   std::string output = testing::internal::GetCapturedStdout();
   std::string error = testing::internal::GetCapturedStderr();
   EXPECT_EQ(output, "");
-  EXPECT_EQ(error, "Error: Address format does not add up to 32 bits\n\n");
+  EXPECT_EQ(error, "Error: Address format does not add up to 32 bits - please adjust blocksize and tlb-size\n\n");
 }
 
 TEST_F(ParseArgumentsTest, ArgTlbSizeHighest) {
@@ -961,7 +961,7 @@ TEST_F(ParseArgumentsTest, InvalidAddressFormatMoreIndexThanPage) {
   std::string output = testing::internal::GetCapturedStdout();
   std::string error = testing::internal::GetCapturedStderr();
   EXPECT_EQ(output, "");
-  EXPECT_EQ(error, "Error: Address format does not add up to 32 bits\n\n");
+  EXPECT_EQ(error, "Error: Address format does not add up to 32 bits - please adjust blocksize and tlb-size\n\n");
 }
 
 TEST_F(ParseArgumentsTest, InvalidAddressFormatMoreIndexThanPage2) {
@@ -975,5 +975,5 @@ TEST_F(ParseArgumentsTest, InvalidAddressFormatMoreIndexThanPage2) {
   std::string output = testing::internal::GetCapturedStdout();
   std::string error = testing::internal::GetCapturedStderr();
   EXPECT_EQ(output, "");
-  EXPECT_EQ(error, "Error: Address format does not add up to 32 bits\n\n");
+  EXPECT_EQ(error, "Error: Address format does not add up to 32 bits - please adjust blocksize and tlb-size\n\n");
 }
