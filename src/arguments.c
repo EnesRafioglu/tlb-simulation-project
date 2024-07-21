@@ -99,6 +99,13 @@ enum PARSE_ARG_RESULT parse_arguments(int argc, char* argv[],
         case OPTION_BLOCKSIZE:
           RETURNS_0_OR_ARG_PARSE_ERROR(validate_and_extract_number(
               "blocksize", optarg, &cnf->blocksize, false, &unsignedOne, true));
+          
+          // Ensure that the blocksize is at least one word long
+          if (cnf->blocksize < 4) {
+            fprintf(stderr, "Error: blocksize must be greater than or equal to 4\n\n");
+            return PARSE_ARG_RESULT_ERROR;
+          }
+
           break;
         case OPTION_V2B_BLOCK_OFFSET:
           RETURNS_0_OR_ARG_PARSE_ERROR(validate_and_extract_number(

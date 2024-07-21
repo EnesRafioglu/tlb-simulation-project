@@ -295,16 +295,13 @@ TEST_F(ParseArgumentsTest, ArgBlocksizeZero) {
 TEST_F(ParseArgumentsTest, ArgBlocksizeOne) {
   struct Configuration cnf;
   char* argv[] = {(char*)"./sim", (char*)"--blocksize=1", (char*)"file.csv"};
-  EXPECT_EQ(PARSE_ARG_RESULT_SUCCESS, parse_arguments(3, argv, &cnf));
-
-  // Check configuration
-  EXPECT_EQ(cnf.blocksize, 1);
+  EXPECT_EQ(PARSE_ARG_RESULT_ERROR, parse_arguments(3, argv, &cnf));
 
   // Check error message
   std::string output = testing::internal::GetCapturedStdout();
   std::string error = testing::internal::GetCapturedStderr();
   EXPECT_EQ(output, "");
-  EXPECT_EQ(error, "");
+  EXPECT_EQ(error, "Error: blocksize must be greater than or equal to 4\n\n");
 }
 
 TEST_F(ParseArgumentsTest, ArgBlocksizeAboveIntMax) {
@@ -332,6 +329,18 @@ TEST_F(ParseArgumentsTest, ArgBlocksizeAboveUIntMax) {
   std::string error = testing::internal::GetCapturedStderr();
   EXPECT_EQ(output, "");
   EXPECT_EQ(error, "Error: blocksize is out of range for the interval (0, 4294967295)\n\n");
+}
+
+TEST_F(ParseArgumentsTest, ArgBlocksizeSmallerThanWord) {
+  struct Configuration cnf;
+  char* argv[] = {(char*)"./sim", (char*)"--blocksize=2", (char*)"file.csv"};
+  EXPECT_EQ(PARSE_ARG_RESULT_ERROR, parse_arguments(3, argv, &cnf));
+
+  // Check error message
+  std::string output = testing::internal::GetCapturedStdout();
+  std::string error = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(output, "");
+  EXPECT_EQ(error, "Error: blocksize must be greater than or equal to 4\n\n");
 }
 
 //* V2bBlockOffset
