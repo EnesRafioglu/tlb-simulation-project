@@ -20,13 +20,13 @@ TEST(PrintUsageTest, Output) {
     output,
     "Usage: ./my_little_potato [OPTIONS] INPUT_FILE\n"
     "Options:\n"
-    "  --cycles=<int>\t\tNumber of cycles to simulate\n"
-    "  --blocksize=<unsigned>\tSize of a memory block in bytes\n"
-    "  --v2b-block-offset=<unsigned>\tOffset used to \"translate\" virtual addresses to physical ones\n"
-    "  --tlb-size=<unsigned>\t\tNumber of entries in the TLB\n"
-    "  --tlb-latency=<unsigned>\tThe latency of the TLB in cycles\n"
-    "  --memory-latency=<unsigned>\tThe latency of the main memory in cycles\n"
-    "  --tf=<path>\t\t\tOutput path for a trace file with all signals\n"
+    "  --cycles=<int>\t\tNumber of cycles to simulate (default: INT_MAX - 1)\n"
+    "  --blocksize=<unsigned>\tSize of a memory block in bytes (default: 64)\n"
+    "  --v2b-block-offset=<unsigned>\tOffset used to \"translate\" virtual addresses to physical ones (default: 1)\n"
+    "  --tlb-size=<unsigned>\t\tNumber of entries in the TLB (default: 16)\n"
+    "  --tlb-latency=<unsigned>\tThe latency of the TLB in cycles (default: 10)\n"
+    "  --memory-latency=<unsigned>\tThe latency of the main memory in cycles (default: 100)\n"
+    "  --tf=<path>\t\t\tOutput path for a trace file with all signals (optional)\n"
     "  --help\t\t\tPrint this help message\n"
   );
   EXPECT_EQ(error, "");
@@ -222,6 +222,19 @@ TEST_F(ParseArgumentsTest, ArgCyclesNegative) {
   std::string error = testing::internal::GetCapturedStderr();
   EXPECT_EQ(output, "");
   EXPECT_EQ(error, "Error: cycles must be greater than or equal to 1\n\n");
+}
+
+TEST_F(ParseArgumentsTest, ArgCyclesINT_MAX) {
+  struct Configuration cnf;
+  std::string arg = "--cycles=" + std::to_string(std::numeric_limits<int>::max());
+  char* argv[] = {(char*)"./sim", (char*)arg.data(), (char*)"file.csv"};
+  EXPECT_EQ(PARSE_ARG_RESULT_ERROR, parse_arguments(3, argv, &cnf));
+
+  // Check error message
+  std::string output = testing::internal::GetCapturedStdout();
+  std::string error = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(output, "");
+  EXPECT_EQ(error, "Error: cycles may not be INT_MAX as it could lead to an ambiguous Result\n\n");
 }
 
 //* Blocksize

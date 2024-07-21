@@ -71,9 +71,9 @@ static struct option longArguments[] = {
 enum PARSE_ARG_RESULT parse_arguments(int argc, char* argv[],
                                       struct Configuration* cnf) {
   // Set sensible defaults
-  cnf->cycles = 1000;
+  cnf->cycles = INT_MAX - 1;
   cnf->blocksize = 64;
-  cnf->v2bBlockOffset = 0;
+  cnf->v2bBlockOffset = 1;
   cnf->tlbSize = 16;
   cnf->tlbLatency = 10;
   cnf->memoryLatency = 100;
@@ -95,6 +95,16 @@ enum PARSE_ARG_RESULT parse_arguments(int argc, char* argv[],
         case OPTION_CYCLES:
           RETURNS_0_OR_ARG_PARSE_ERROR(validate_and_extract_number(
               "cycles", optarg, &cnf->cycles, true, &signedOne, false));
+
+          // Ensure that cycles is not INT_MAX because that could lead to an
+          // ambiguous `Result`
+          if (cnf->cycles == INT_MAX) {
+            fprintf(stderr,
+                    "Error: cycles may not be INT_MAX as it could lead to an "
+                    "ambiguous Result\n\n");
+            return PARSE_ARG_RESULT_ERROR;
+          }
+
           break;
         case OPTION_BLOCKSIZE:
           RETURNS_0_OR_ARG_PARSE_ERROR(validate_and_extract_number(
@@ -159,6 +169,14 @@ enum PARSE_ARG_RESULT parse_arguments(int argc, char* argv[],
         return PARSE_ARG_RESULT_ERROR;
       }
 
+      // Check if the input file is a CSV file
+      if (!has_suffix(argv[optind], ".csv")) {
+        fprintf(
+            stderr,
+            "WARN: Input file does not have a .csv suffix - will continue for "
+            "now\n");
+      }
+
       // Set the input file
       cnf->inputFile = argv[optind];
       optind++;
@@ -170,13 +188,6 @@ enum PARSE_ARG_RESULT parse_arguments(int argc, char* argv[],
     fprintf(stderr, "Error: No input file specified\n\n");
 
     return PARSE_ARG_RESULT_ERROR;
-  }
-
-  // Check if the input file is a CSV file
-  if (!has_suffix(cnf->inputFile, ".csv")) {
-    fprintf(stderr,
-            "WARN: Input file does not have a .csv suffix - will continue for "
-            "now\n");
   }
 
   return PARSE_ARG_RESULT_SUCCESS;
@@ -223,15 +234,19 @@ void print_usage(const char* program_name) {
   printf(
       "Usage: %s [OPTIONS] INPUT_FILE\n"
       "Options:\n"
-      "  --cycles=<int>\t\tNumber of cycles to simulate\n"
-      "  --blocksize=<unsigned>\tSize of a memory block in bytes\n"
+      "  --cycles=<int>\t\tNumber of cycles to simulate (default: INT_MAX - "
+      "1)\n"
+      "  --blocksize=<unsigned>\tSize of a memory block in bytes (default: "
+      "64)\n"
       "  --v2b-block-offset=<unsigned>\tOffset used to \"translate\" virtual "
-      "addresses to physical ones\n"
-      "  --tlb-size=<unsigned>\t\tNumber of entries in the TLB\n"
-      "  --tlb-latency=<unsigned>\tThe latency of the TLB in cycles\n"
+      "addresses to physical ones (default: 1)\n"
+      "  --tlb-size=<unsigned>\t\tNumber of entries in the TLB (default: 16)\n"
+      "  --tlb-latency=<unsigned>\tThe latency of the TLB in cycles (default: "
+      "10)\n"
       "  --memory-latency=<unsigned>\tThe latency of the main memory in "
-      "cycles\n"
-      "  --tf=<path>\t\t\tOutput path for a trace file with all signals\n"
+      "cycles (default: 100)\n"
+      "  --tf=<path>\t\t\tOutput path for a trace file with all signals "
+      "(optional)\n"
       "  --help\t\t\tPrint this help message\n",
       program_name);
 }
