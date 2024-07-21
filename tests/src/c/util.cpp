@@ -453,6 +453,15 @@ TEST(IsPowerOfTwoTest, NotAPowerOfTwo) {
   }
 }
 
+//* ilog2
+
+TEST(Ilog2Test, Values) {
+  for (int i = 0; i < 32; i++) {
+    uint32_t powerOfTwo = 1 << i;
+    EXPECT_EQ(ilog2(powerOfTwo), i);
+  }
+}
+
 //* has_suffix
 
 TEST(HasSuffixTest, Basic) {

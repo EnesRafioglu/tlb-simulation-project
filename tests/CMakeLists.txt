@@ -98,6 +98,7 @@ target_compile_definitions(
   c_tests
   PRIVATE
   IS_TESTING
+  DEBUG
   LANG_C
 )
 
@@ -122,6 +123,7 @@ target_compile_definitions(
   cpp_tests
   PRIVATE
   IS_TESTING
+  DEBUG
   LANG_CPP
 )
 

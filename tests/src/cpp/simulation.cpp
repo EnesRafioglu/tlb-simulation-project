@@ -69,6 +69,26 @@ struct SimulationTestParams {
       expectGateCount(expectGateCount),
       expected(expected),
       expected_data(expected_reads) {}
+  
+  friend std::ostream& operator<<(std::ostream& os, const SimulationTestParams& dt) {
+    os << "[" << dt.testName << "]"
+      << "\n\tCycles: " << dt.cycles 
+      << "\n\tTLB Size: " << dt.tlbSize 
+      << "\n\tTLB Latency: " << dt.tlbsLatency 
+      << "\n\tBlocksize: " << dt.blocksize 
+      << "\n\tV2B Block Offset: " << dt.v2bBlockOffset 
+      << "\n\tMemory Latency: " << dt.memoryLatency 
+      << "\n\tNumber of Requests: " << dt.numRequests 
+      << "\n\tExpect Gate Count: " << dt.expectGateCount 
+      << "\n\tExpected Result: "
+      << "\n\t\tCycles: " << dt.expected.cycles
+      << "\n\t\tMisses: " << dt.expected.misses
+      << "\n\t\tHits: " << dt.expected.hits
+      << "\n\t\tPrimitive Gate Count: " << dt.expected.primitiveGateCount;
+      // << "\n\tExpected Reads: " << dt.expected_data;
+
+    return os;
+  }
 };
 
 /**
@@ -890,6 +910,179 @@ INSTANTIATE_TEST_SUITE_P(
         0x11,
         0x00,
       }
+    ),
+    SimulationTestParams(
+      "ZeroCyclesNoRequests",
+
+      // Cycles
+      0,
+      // TLB Size
+      4,
+      // TLB Latency
+      1,
+      // Blocksize
+      16,
+      // V2B Block Offset
+      0,
+      // Memory Latency
+      1,
+      // Number of Requests
+      0,
+      // Requests
+      {},
+      // Tracefile
+      nullptr,
+
+      // Expect Gate Count
+      true,
+      // Expected Result
+      Result{
+        // Cycles
+        0,
+        // Misses
+        0,
+        // Hits
+        0,
+        // Primitive Gate Count
+        1568
+      },
+      // Expected Reads
+      {}
+    ),
+    SimulationTestParams(
+      "ZeroCyclesWithRequests",
+
+      // Cycles
+      0,
+      // TLB Size
+      4,
+      // TLB Latency
+      1,
+      // Blocksize
+      16,
+      // V2B Block Offset
+      0,
+      // Memory Latency
+      1,
+      // Number of Requests
+      4,
+      // Requests
+      {
+        WRITE_R(0x01, 0x11),
+        READ_R(0x01),
+        READ_R(0x01),
+        READ_R(0x01)
+      },
+      // Tracefile
+      nullptr,
+
+      // Expect Gate Count
+      true,
+      // Expected Result
+      Result{
+        // Cycles
+        std::numeric_limits<size_t>::max(),
+        // Misses
+        0,
+        // Hits
+        0,
+        // Primitive Gate Count
+        1568
+      },
+      // Expected Reads
+      {
+        0x11,
+        0x00,
+        0x00,
+        0x00,
+      }
+    ),
+    SimulationTestParams(
+      "ZeroTlbSizeNoRequests",
+
+      // Cycles
+      100,
+      // TLB Size
+      0,
+      // TLB Latency
+      17,
+      // Blocksize
+      16,
+      // V2B Block Offset
+      0,
+      // Memory Latency
+      1,
+      // Number of Requests
+      0,
+      // Requests
+      {},
+      // Tracefile
+      nullptr,
+
+      // Expect Gate Count
+      true,
+      // Expected Result
+      Result{
+        // Cycles
+        0,
+        // Misses
+        0,
+        // Hits
+        0,
+        // Primitive Gate Count
+        0
+      },
+      // Expected Reads
+      {}
+    ),
+    SimulationTestParams(
+      "ZeroTlbSizeWithRequests",
+
+      // Cycles
+      100,
+      // TLB Size
+      0,
+      // TLB Latency
+      17,
+      // Blocksize
+      16,
+      // V2B Block Offset
+      0,
+      // Memory Latency
+      5,
+      // Number of Requests
+      4,
+      // Requests
+      {
+        WRITE_R(0x01, 0x11),
+        READ_R(0x01),
+        READ_R(0x01),
+        READ_R(0x01)
+      },
+      // Tracefile
+      nullptr,
+
+      // Expect Gate Count
+      true,
+      // Expected Result
+      Result{
+        // Cycles
+        // numReq + (numReq * memLatency) + (numReq * TLBLatency) + (numTLBMiss * (memLatency + TLBWriteLatency))
+        4 + (4*5) + (4*0) + (4*(5+0)),
+        // Misses
+        4,
+        // Hits
+        0,
+        // Primitive Gate Count
+        0
+      },
+      // Expected Reads
+      {
+        0x11,
+        0x11,
+        0x11,
+        0x11,
+      }
     )
   ),
   get_simulation_test_name
@@ -1329,6 +1522,59 @@ INSTANTIATE_TEST_SUITE_P(
   get_simulation_test_name
 );
 
+INSTANTIATE_TEST_SUITE_P(
+  SimulationEdgeCaseTests,
+  SimulationDeathTest,
+  testing::Values(
+    SimulationTestParams(
+      "WriteReadTLBSize1",
+
+      // Cycles
+      1000,
+      // TLB Size
+      1,
+      // TLB Latency
+      1,
+      // Blocksize
+      16,
+      // V2B Block Offset
+      1,
+      // Memory Latency
+      1,
+      // Number of Requests
+      2,
+      // Requests
+      {
+        WRITE_R(0x01, 0x11),
+        READ_R(0x01)
+      },
+      // Tracefile
+      nullptr,
+
+      // Expect Gate Count
+      false,
+      // Expected Result
+      Result{
+        // Cycles
+        // numReq + (numReq * memLatency) + (numReq * TLBLatency) + (numTLBMiss * (memLatency + TLBWriteLatency))
+        2 + (2*1) + (2*1) + (1*(1+0)),
+        // Misses
+        1,
+        // Hits
+        1,
+        // Primitive Gate Count
+        0
+      },
+      // Expected Reads
+      {
+        0x11,
+        0x11
+      }
+    )
+  ),
+  get_simulation_test_name
+);
+
 //* These tests are pseudo-randomly generated
 struct RandomTestDistributions {
   std::uniform_int_distribution<int> cycles;
@@ -1400,9 +1646,6 @@ SimulationTestParams generate_random_test(const std::string& name, int seed, Ran
   std::map<uint32_t, uint32_t> tlb;
 
   for (size_t j = 0; j < numRequests; j++) {
-    // Every request needs at least 1 base cycle (CPU high clock)
-    expectedCycles += 1;
-
     // Generate the basic request data
     bool isWrite = distributions.requestType(rd);
     uint32_t address = distributions.address(rd);
@@ -1466,6 +1709,9 @@ SimulationTestParams generate_random_test(const std::string& name, int seed, Ran
 generate_random_test_done:
     requests.push_back(isWrite ? WRITE_R(address / 4, data) : READ_R(address / 4));
     expectedData.push_back(data);
+
+    // Every request needs at least 1 base cycle (CPU high clock)
+    expectedCycles += 1;
   }
 
   // Check if we weren't able to finish all requests
@@ -1524,16 +1770,6 @@ std::vector<SimulationTestParams> generate_random_tests(const std::string& baseN
   std::random_device rand_dev;
   std::mt19937 seed_rd(rand_dev());
 
-  std::uniform_int_distribution<> cyclesDistrib(1000, 1000000);
-  std::uniform_int_distribution<> numRequestsDistrib(1, 5000);
-  std::uniform_int_distribution<> numIndexBitsDistrib(1, 17);
-  std::uniform_int_distribution<> latencyDistrib(1, 1000);
-  std::uniform_int_distribution<> v2bBlockOffsetDistrib(0, 1000);
-
-  std::uniform_int_distribution<> requestTypeDistrib(0, 1);
-  std::uniform_int_distribution<> addressDistrib(0, 0xFFFFFFFF);
-  std::uniform_int_distribution<> dataDistrib(0, 0xFFFFFFFF);
-
   for (int i = 0; i < numTests; ++i) {
     int seed = seedDistrib(seed_rd);
 
@@ -1551,13 +1787,25 @@ std::vector<SimulationTestParams> generate_random_tests(const std::string& baseN
   return tests;
 }
 
+SimulationTestParams generate_specific_random_test(const std::string& baseName, int seed, RandomTestDistributions distributions, bool log = false) {
+  std::string name = baseName + "__seed__" + std::to_string(seed);
+
+  SimulationTestParams test = generate_random_test(name, seed, distributions);
+
+  if (log) {
+    std::cout << "Specific Random Test: " << test << std::endl;
+  }
+
+  return test;
+}
+
 INSTANTIATE_TEST_SUITE_P(
   SimulationGenerativeTests,
   SimulationDeathTest,
   testing::ValuesIn(
     generate_random_tests(
       "TotallyRandom",
-      150,
+      1000,
       RandomTestDistributions(
         // Cycles
         std::uniform_int_distribution<>(1000, 1000000),
@@ -1573,10 +1821,42 @@ INSTANTIATE_TEST_SUITE_P(
         // Request Type
         std::uniform_int_distribution<>(0, 1),
         // Address
-        std::uniform_int_distribution<>(0, 0xFFFFFFFF),
+        std::uniform_int_distribution<>(0, std::numeric_limits<int>::max()),
         // Data
-        std::uniform_int_distribution<>(0, 0xFFFFFFFF)
+        std::uniform_int_distribution<>(0, std::numeric_limits<int>::max())
       )
+    )
+  ),
+  get_simulation_test_name
+);
+
+INSTANTIATE_TEST_SUITE_P(
+  SimulationSpecificGenerativeTest,
+  SimulationDeathTest,
+  testing::Values(
+    generate_specific_random_test(
+      "SpecificTest",
+      17062003,
+      RandomTestDistributions(
+        // Cycles
+        std::uniform_int_distribution<>(1000, 1000000),
+        // Number of Index Bits (TLB Size)
+        // Tag bits are dynamically calculated with a distribution over [0, 32 - 2 - numIndexBits]
+        std::uniform_int_distribution<>(1, 17),
+        // TLB Latency
+        std::uniform_int_distribution<>(1, 1000),
+        // V2B Block Offset
+        std::uniform_int_distribution<>(0, 1000),
+        // Number of Requests
+        std::uniform_int_distribution<>(1, 5000),
+        // Request Type
+        std::uniform_int_distribution<>(0, 1),
+        // Address
+        std::uniform_int_distribution<>(0, std::numeric_limits<int>::max()),
+        // Data
+        std::uniform_int_distribution<>(0, std::numeric_limits<int>::max())
+      ),
+      false
     )
   ),
   get_simulation_test_name

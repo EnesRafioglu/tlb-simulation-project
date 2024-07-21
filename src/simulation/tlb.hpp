@@ -1,52 +1,63 @@
 #pragma once
 
 #include <systemc>
-#include <cmath>
 
-#include "cachelines.hpp"
-#include "util.hpp"
+#include "cache_lines.hpp"
+
+using namespace sc_core;
 
 /**
- * @brief Wrapper of the CACHELINES Module.
- * 
- * This module splits the page number into tag and index and
- * passes it to the cache-field along with other inputs.
+ * @brief SystemC module representing a Translation Lookaside Buffer (TLB).
+ *
+ * The TLB is a cache that stores mappings of virtual memory pages to physical
+ * memory frames. This aids in the quick translation of virtual addresses to
+ * physical addresses.
  */
 SC_MODULE(TLB) {
 public:
   SC_HAS_PROCESS(TLB);
 
-  /** Input port for the virtual page number. */
+  /** Page number of the virtual address to be looked up in the TLB */
   sc_in<sc_bv<32>> pageNumberIn;
 
-  /** Input port for the frame number to be stored. */
+  /** Frame number of the physical address to be stored in the TLB */
   sc_in<sc_bv<32>> frameNumberIn;
 
-  /** Input port for the write enable signal. */
-  sc_in<bool> we;
+  /** Indicates whether `frameNumberIn` should be persisted in the TLB */
+  sc_in<bool> writeEnabled;
 
-  /** Pointer to the inner cache. */
-  CACHELINES* cache;
-
-  /** Output port for the frame number stored in the cache line. */
+  /** @brief Frame number currenlty stored in the TLB for `pageNumberIn`
+   * 
+   * This is only the frame number stored in the cache line that `pageNumberIn`
+   * maps to. Before using this value, you should check if the frame was found
+   * using the `found` signal.
+   */
   sc_out<sc_bv<32>> frameNumberOut;
 
-  /** Output port indicating whether the tag was found in the cache line. */
+  /** Indicates whether `pageNumberIn` was present in the TLB and
+   * `frameNumberOut` is valid */
   sc_out<bool> found;
 
-  /** Signal for the tag. */
-  sc_signal<sc_bv<32>> tagSignal;
+private:
 
-  /** Signal for the index. */
-  sc_signal<sc_bv<32>> indexSignal;
+  /** Underlying cache lines that hold the actual values in the TLB */
+  CACHELINES cacheLines;
 
-  /** Size of the TLB. */
-  unsigned tlbsize;
+  // Signals for communication with the cache lines
+  sc_buffer<sc_bv<32>> sigCacheLinesTag;
+  sc_buffer<sc_bv<32>> sigCacheLinesIndex;
+
+  /** Number of bits used for the index from `pageNumberIn` */
+  int numIndexBits;
 
 public:
-  TLB(sc_module_name name, CACHELINES* cache);
+  TLB(sc_module_name name, unsigned int tlbSize, sc_trace_file* vcdTraceFile);
 
 private:
-  /** Thread process that updates the TLB. */
-  void update();
+  /** @brief Method that is called when a signal on the sensitivity list changes.
+   * 
+   * This method is responsible for extracting the tag and index from
+   * `pageNumberIn` and forwarding the data to the cache lines.
+   */
+  void tlbOperation();
 };

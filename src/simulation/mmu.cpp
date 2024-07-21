@@ -11,21 +11,21 @@ MMU::MMU(
   unsigned int v2bBlockOffset,
   unsigned int tlbsLatency,
   unsigned int memoryLatency
-) : sc_module(name), tlb(tlb), v2bBlockOffset(v2bBlockOffset), tlbsLatency(tlbsLatency), memoryLatency(memoryLatency), numHits(0), numMisses(0) {
+) : sc_module(name), v2bBlockOffset(v2bBlockOffset), tlbsLatency(tlbsLatency), memoryLatency(memoryLatency), numHits(0), numMisses(0) {
   // Calculate the number of bits used for the page number
   // We can simplify this calculation because both virtual and physical addresses are 32 bits
   numPageBits = 32 - std::log2(blocksize);
 
   // Wire up the tlb module
-  tlbVirtualPageNumber(sigTlbVirtualPageNumber);
-  tlbPhysicalFrameNumber(sigTlbPhysicalFrameNumber);
+  tlbVirtualPageNumberIn(sigTlbVirtualPageNumberIn);
+  tlbPhysicalFrameNumberOut(sigTlbPhysicalFrameNumberOut);
   tlbFound(sigTlbFound);
 
-  tlb->pageNumberIn(sigTlbVirtualPageNumber);
-  tlb->frameNumberIn(sigTlbPhysicalFrameNumber);
+  tlb->pageNumberIn(sigTlbVirtualPageNumberIn);
+  tlb->frameNumberIn(sigTlbPhysicalFrameNumberIn);
+  tlb->writeEnabled(sigTlbWriteEnabled);
   tlb->found(sigTlbFound);
-  tlb->frameNumberOut(fout);
-  tlb->we(weout);
+  tlb->frameNumberOut(sigTlbPhysicalFrameNumberOut);
 
   // Wire up the memory module
   memWriteEnabled(sigMemWriteEnabled);
@@ -43,7 +43,7 @@ MMU::MMU(
 
   dont_initialize();
 
-  sensitive << nextRequest;
+  sensitive << writeEnabled << address << dataIn;
 }
 
 size_t MMU::getNumHits() const {
@@ -63,21 +63,27 @@ void MMU::mmuOperation() {
 
     // Extract the virtual page number from the virtual address
     const uint32_t virtualPageNumber = takeLeadingNBits(virtualAddress, numPageBits);
+    debug_log("MMU", "Virtual address: 0x" << std::hex << virtualAddress << " -> virtual page number: 0x" << virtualPageNumber << std::dec);
 
     // Send the virtual address page to the TLB and wait for the TLB to find the physical frame
-    tlbVirtualPageNumber.write(virtualPageNumber);
-
-    // Wait for tlb latency affecting the cycle count
-    wait(tlbsLatency, SC_NS);
+    tlbVirtualPageNumberIn.write(virtualPageNumber);
 
     // Wait delta cycles for the real tlb latency
+    debug_log("MMU", "Waiting for actual TLB latency at cycle: " << getNumCyclesRan() << ", delta: " << sc_delta_count());
     wait(sigTlbFound.default_event());
+    debug_log("MMU", "End actual TLB latency at cycle: " << getNumCyclesRan() << ", delta: " << sc_delta_count());
+
+    // Wait for tlb latency affecting the cycle count
+    debug_log("MMU", "Start TLB latency at cycle: " << getNumCyclesRan());
+    wait(tlbsLatency, SC_NS);
+    debug_log("MMU", "End TLB latency at cycle: " << getNumCyclesRan());
 
     // Check if the TLB found the physical frame
     const bool found = tlbFound.read();
-    uint32_t physicalFrame = tlbPhysicalFrameNumber.read().to_uint();
+    uint32_t physicalFrame = tlbPhysicalFrameNumberOut.read().to_uint();
 
     if (!found) {
+      debug_log("MMU", "TLB miss");
       numMisses++;
 
       // If the TLB didn't find the physical frame, we need to calculate it
@@ -88,42 +94,57 @@ void MMU::mmuOperation() {
       wait(memoryLatency, SC_NS);
 
       // Store the translation in the TLB for future use
-      sigTlbPhysicalFrameNumber.write(physicalFrame);
-      sigTlbVirtualPageNumber.write(virtualPageNumber);
+      sigTlbVirtualPageNumberIn.write(virtualPageNumber);
+      sigTlbPhysicalFrameNumberIn.write(physicalFrame);
+      sigTlbWriteEnabled.write(true);
+
+      // Wait delta cycles for the real tlb latency
+      //? We don't need to wait for the TLB latency here, because we checked
+      //? `tlbLatency <= memoryLatency` when parsing the arguments in C.
+      //? Writing to the TLB can therefore be done while waiting for the upcoming
+      //? memory operation.
+      wait(sigTlbFound.default_event());
+
+      sigTlbWriteEnabled.write(false);
     } else {
+      debug_log("MMU", "TLB hit");
       numHits++;
     }
+    debug_log("MMU", "Physical frame: 0x" << std::hex << physicalFrame << std::dec);
 
     // Calculate the physical address
     const uint32_t physicalAddress = (physicalFrame << (32 - numPageBits)) | takeTrailingNBits(virtualAddress, (32 - numPageBits));
 
     debug_log(
       "MMU",
-      (found ? "TLB hit" : "TLB miss") << " for virtual address 0x" << std::hex << virtualAddress << " -> physical address 0x" << physicalAddress
+      (found ? "TLB hit" : "TLB miss") << " for virtual address 0x" << std::hex << virtualAddress << " -> physical address 0x" << physicalAddress << std::dec
     );
 
     // Send the physical address etc. to the memory module and wait for the memory
+    bool isWrite = writeEnabled.read();
     memAddress.write(physicalAddress);
-    memWriteEnabled.write(writeEnabled.read());
+    memWriteEnabled.write(isWrite);
     memDataIn.write(dataIn.read());
 
-    // Wait for memory latency affecting the cycle count
-    wait(memoryLatency, SC_NS);
     // Wait delta cycles for the real memory latency
     // (normally two delta cycles as the memory module is triggered in the next delta cycle
     //  and it's output becomes available in the deltacycle after that)
+    debug_log("MMU", "Waiting for actual memory latency at cycle: " << getNumCyclesRan() << ", delta: " << sc_delta_count());
     wait(sigMemDataOut.default_event());
+    debug_log("MMU", "End actual memory latency at cycle: " << getNumCyclesRan() << ", delta: " << sc_delta_count());
 
-    // TODO: Decide which method of synchronization to use
-    // If the memory latency is 0, we need to wait for two delta cycles for
-    // the memory module to finish the operation (this doesn't affect the cycle count)
-    // if (memoryLatency == 0) {
-    //   wait(SC_ZERO_TIME);
-    //   wait(SC_ZERO_TIME);
-    // }
+    // Wait for memory latency affecting the cycle count
+    debug_log("MMU", "Start memory latency at cycle: " << getNumCyclesRan());
+    wait(memoryLatency, SC_NS);
+    debug_log("MMU", "End memory latency at cycle: " << getNumCyclesRan());
 
     // Read the data from the memory module and send it to the CPU
     dataOut.write(memDataOut.read());
+
+    debug_log(
+      "MMU",
+      (isWrite ? "Write" : "Read") << " operation at address 0x" << std::hex << virtualAddress << " -> 0x" << physicalAddress << " with data 0x" << (isWrite ? dataIn.read().to_uint() : memDataOut.read()) << std::dec
+    );
 
     // Signal the CPU that the operation is done and wait for the next operation
     mmuDone.notify(SC_ZERO_TIME);

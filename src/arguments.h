@@ -50,6 +50,8 @@ struct Configuration {
   const char* traceFile;
   /** The input file that contains the data to be processed. */
   const char* inputFile;
+  /** The output file for the simulation read results. */
+  const char* outputFile;
 };
 
 /**

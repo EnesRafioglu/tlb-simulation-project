@@ -1,13 +1,15 @@
 #include "cpu.hpp"
 
 #include "logging.hpp"
+#include "util.hpp"
 
 CPU::CPU(
   sc_module_name name,
   MMU* mmu,
   unsigned int numRequests,
-  Request* requests
-) : sc_module(name), mmu(mmu), numRequests(numRequests), requests(requests), requestIndex(0) {
+  Request* requests,
+  CaptureStream& captureStdout
+) : sc_module(name), mmu(mmu), numRequests(numRequests), requests(requests), requestIndex(0), captureStdout(captureStdout) {
   // Wire up the mmu module
   writeEnabled(sigWriteEnabled);
   address(sigAddress);
@@ -18,9 +20,6 @@ CPU::CPU(
   mmu->address(sigAddress);
   mmu->dataIn(sigDataIn);
   mmu->dataOut(sigDataOut);
-  mmu->nextRequest(sigNext);
-
-  sendingNextRequest(sigNext);
 
   // Register the CPU operation method and sensitivity list
   SC_THREAD(cpuOperation);
@@ -36,28 +35,39 @@ void CPU::cpuOperation() {
   while(true) {
     // Stop if all requests have been processed
     if (isDone()) {
+      captureStdout.start();
       sc_stop();
+
+      //? For explanation of why we don't stop the stdout capture immediately,
+      //? see the comment in the simulation.cpp file right under `sc_start(...)`.
+
       return;
     }
 
     // Get the current request
     Request* const request = &requests[requestIndex];
 
-    debug_log(std::string(25, '+'));
+    debug_log(std::string(12, '+') << "Start at: " << getNumCyclesRan() << std::string(12, '+'));
     debug_log(
       "CPU",
-      "Processing request " << requestIndex << " with address 0x" << std::hex << request->addr << " and data 0x" << request->data
+      "Processing request " << requestIndex << " with address 0x" << std::hex << request->addr << " (" << std::dec << request->addr << std::hex << ") and data 0x" << request->data << std::dec
     );
 
     // Send the request to the MMU
     address.write(request->addr);
     dataIn.write(request->data);
     writeEnabled.write(request->we);
-    //Trigger the MMU
-    sigNext.write(!sigNext.read());
 
     // Wait for the MMU to process the request
+    debug_log(
+      "CPU",
+      "Waiting for MMU to finish operation"
+    );
     wait(mmu->mmuDone);
+    debug_log(
+      "CPU",
+      "MMU finished operation"
+    );
 
     // If the request was a read, get the data from the MMU
     if (request->we == false) {
@@ -65,11 +75,11 @@ void CPU::cpuOperation() {
 
       debug_log(
         "CPU",
-        "Received data 0x" << std::hex << request->data
+        "Received data 0x" << std::hex << request->data << std::dec
       );
     }
 
-    debug_log(std::string(25, '+'));
+    debug_log(std::string(12, '-') << "Done at: " << getNumCyclesRan() << std::string(12, '-') << std::endl);
 
     ++requestIndex;
     wait();
