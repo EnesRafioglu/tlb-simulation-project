@@ -20,12 +20,13 @@ size_t gateCount (unsigned tlbSize, unsigned blocksize) {
   unsigned int numTagBits = frameNumberBits - numIndexBits;
 
   
-
-  // the cache line might store the tag the frameNumber and a valid bit
+  // The cache line might store the tag the frameNumber and a valid bit
   unsigned int cacheLineSize = numTagBits + frameNumberBits + 1;
 
+  // Gates used to store the tag, frameNumber and valid bit
   size_t cacheStoreGates = numCachelines * cacheLineSize * 4;	
-  // the multiplexer is used to propagate the right cache entry.
+
+  // The multiplexer is used to propagate the right cache entry.
   // From the ERA lecture it is known that a n-Bit Mux (with two inputs)
   // can be implemented with 3n + 1 gates. For more inputs k we can simply
   // take k-1 Muxes (in a tree like structure). Wo we need log2(k) select
@@ -35,17 +36,18 @@ size_t gateCount (unsigned tlbSize, unsigned blocksize) {
   // the decoder is used to select the right cache line with the index Bits as input
   // decoder with n inputs has 2^n outputs. Therefore we need 2^n and gates and n not gates.
   size_t decoderGates = (1 << numIndexBits)*(numIndexBits - 1) + numIndexBits;
-  size_t overwriteGates = decoderGates + numCachelines;
 
-  // compare the tag of the cache line with the tag of the virtual address
+  // Gates used to AND the writeEnabled signal with the select (decoder) signal
+  size_t writeEnabledSelect = numCachelines;
+
+  // Compare the tag of the cache line with the tag of the virtual address
   // to check if virtual address is in the tlb. Compare is a SUB operation and 
   // a OR operation to check if the result is zero.
   // From ERA lecture it is known that a SUB operation can be implemented with 
   // a Full Adder (5n), where all bits of the second operand are inverted (n) 
-
   size_t comparatorGates = 7 * numTagBits - 1 ; 
 
-  return cacheStoreGates + muxGates + decoderGates + overwriteGates + comparatorGates;
+  return cacheStoreGates + muxGates + decoderGates + writeEnabledSelect + comparatorGates;
 }
 
 /**
