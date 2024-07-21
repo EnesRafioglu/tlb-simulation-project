@@ -1,8 +1,16 @@
 #include <systemc>
 #include <iostream>
 
+#include <systemc>
+
+using namespace sc_core;
+
 extern "C" int test_function();
 int test_function() {
+
+  sc_start(0, SC_NS);
+  sc_stop();
+
   return 17062003;
 }
 
