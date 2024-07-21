@@ -23,14 +23,31 @@ tlb_sizes = [
   256,
   512,
   1024,
+  2048,
+  4096,
+  8192,
+  16384,
 ]
 
 blocksize = 4096
 
-tlb_latency = 3
+tlb_latency = {
+  0: 0,
+  1: 0,
+  2: 0,
+  4: 0,
+  8: 1,
+  16: 1,
+  32: 1,
+  64: 1,
+  128: 2,
+  256: 2,
+  512: 2,
+  1024: 3,
+}
 memory_latency = 200
 
-output_file = "results_with_writes_neu.csv"
+output_file = "results_no_writes_with_latencies.csv"
 
 @dataclass
 class TLBResult:
@@ -46,15 +63,18 @@ class TLBResult:
   def __str__(self) -> str:
     return f"TLB size {self.tlb_size} with {self.requests_path} took {self.cycles} cycles with {self.tlb_hits} TLB hits and {self.tlb_misses} TLB misses"
 
+def calc_latency(tlb_size: int) -> int:
+  return tlb_latency[tlb_size]
+
 def run_tlb_simulation(request_size: int, tlb_size: int) -> TLBResult:
-  requests_path = f"examples/ListSum_{request_size}_withWrites.csv"
+  requests_path = f"examples/ListSum_{request_size}.csv"
 
   output = subprocess.check_output(
     [
       "./tlb",
       f"--blocksize={blocksize}",
       f"--tlb-size={tlb_size}",
-      f"--tlb-latency={tlb_latency}",
+      f"--tlb-latency={calc_latency(tlb_size)}",
       f"--memory-latency={memory_latency}",
       requests_path
     ])
