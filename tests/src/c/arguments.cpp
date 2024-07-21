@@ -583,11 +583,11 @@ TEST_F(ParseArgumentsTest, ArgTlbSizeAboveUIntMax) {
 
 TEST_F(ParseArgumentsTest, ArgTlbLatencyLong) {
   struct Configuration cnf;
-  char* argv[] = {(char*)"./sim", (char*)"--tlb-latency", (char*)"128", (char*)"file.csv"};
+  char* argv[] = {(char*)"./sim", (char*)"--tlb-latency", (char*)"2", (char*)"file.csv"};
   EXPECT_EQ(PARSE_ARG_RESULT_SUCCESS, parse_arguments(4, argv, &cnf));
 
   // Check configuration
-  EXPECT_EQ(cnf.tlbLatency, 128);
+  EXPECT_EQ(cnf.tlbLatency, 2);
 
   // Check error message
   std::string output = testing::internal::GetCapturedStdout();
@@ -598,11 +598,11 @@ TEST_F(ParseArgumentsTest, ArgTlbLatencyLong) {
 
 TEST_F(ParseArgumentsTest, ArgTlbLatencyLongEquals) {
   struct Configuration cnf;
-  char* argv[] = {(char*)"./sim", (char*)"--tlb-latency=128", (char*)"file.csv"};
+  char* argv[] = {(char*)"./sim", (char*)"--tlb-latency=2", (char*)"file.csv"};
   EXPECT_EQ(PARSE_ARG_RESULT_SUCCESS, parse_arguments(3, argv, &cnf));
 
   // Check configuration
-  EXPECT_EQ(cnf.tlbLatency, 128);
+  EXPECT_EQ(cnf.tlbLatency, 2);
 
   // Check error message
   std::string output = testing::internal::GetCapturedStdout();
@@ -655,9 +655,10 @@ TEST_F(ParseArgumentsTest, ArgTlbLatencyNonPowerOfTwo) {
 
 TEST_F(ParseArgumentsTest, ArgTlbLatencyJustInRange) {
   struct Configuration cnf;
-  std::string arg = "--tlb-latency=" + std::to_string(std::numeric_limits<uint32_t>::max());
-  char* argv[] = {(char*)"./sim", (char*)arg.data(), (char*)"file.csv"};
-  EXPECT_EQ(PARSE_ARG_RESULT_SUCCESS, parse_arguments(3, argv, &cnf));
+  std::string arg1 = "--tlb-latency=" + std::to_string(std::numeric_limits<uint32_t>::max());
+  std::string arg2 = "--memory-latency=" + std::to_string(std::numeric_limits<uint32_t>::max());
+  char* argv[] = {(char*)"./sim", (char*)arg1.data(), (char*)arg2.data(), (char*)"file.csv"};
+  EXPECT_EQ(PARSE_ARG_RESULT_SUCCESS, parse_arguments(4, argv, &cnf));
 
   // Check configuration
   EXPECT_EQ(cnf.tlbLatency, std::numeric_limits<uint32_t>::max());
@@ -715,8 +716,8 @@ TEST_F(ParseArgumentsTest, ArgMemoryLatencyNegative) {
 
 TEST_F(ParseArgumentsTest, ArgMemoryLatencyZero) {
   struct Configuration cnf;
-  char* argv[] = {(char*)"./sim", (char*)"--memory-latency=0", (char*)"file.csv"};
-  EXPECT_EQ(PARSE_ARG_RESULT_SUCCESS, parse_arguments(3, argv, &cnf));
+  char* argv[] = {(char*)"./sim", (char*)"--tlb-latency=0", (char*)"--memory-latency=0", (char*)"file.csv"};
+  EXPECT_EQ(PARSE_ARG_RESULT_SUCCESS, parse_arguments(4, argv, &cnf));
 
   // Check configuration
   EXPECT_EQ(cnf.memoryLatency, 0);
@@ -730,11 +731,11 @@ TEST_F(ParseArgumentsTest, ArgMemoryLatencyZero) {
 
 TEST_F(ParseArgumentsTest, ArgMemoryLatencyNonPowerOfTwo) {
   struct Configuration cnf;
-  char* argv[] = {(char*)"./sim", (char*)"--memory-latency=3", (char*)"file.csv"};
+  char* argv[] = {(char*)"./sim", (char*)"--memory-latency=13", (char*)"file.csv"};
   EXPECT_EQ(PARSE_ARG_RESULT_SUCCESS, parse_arguments(3, argv, &cnf));
 
   // Check configuration
-  EXPECT_EQ(cnf.memoryLatency, 3);
+  EXPECT_EQ(cnf.memoryLatency, 13);
 
   // Check error message
   std::string output = testing::internal::GetCapturedStdout();
