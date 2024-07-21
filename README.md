@@ -19,20 +19,23 @@ TLBs verringern diese Zahl erheblich und verbessern so die Gesamtleistung.
 
 ## Ergebnis der Berechnung der Summe über einer verketteten Liste
 
-Im Rahmen des Projekts sollten wir zudem das Speicherzugriffsverhalten einer Summe über 
+Zudem hatten wir die Aufgabe, das Speicherzugriffsverhalten einer Summe über 
 einer verketteten Liste untersuchen. Dazu haben wir für die TLB-Latenz den Wert 3, für 
-die Speicher-Latenz den Wert 200 und für den Parameter Blocksize den Wert 4096 gewählt. 
+die Speicher-Latenz den Wert 200 und für die Seitengröße 4096 gewählt. 
 
-Als TLB-Größe haben wir alle Zweierpotenzen zwischen 0 und 1024 gewählt und Listengrößen 
+Als TLB-Größe haben wir Zweierpotenzen zwischen 0 und 1024 gewählt und Listengrößen 
 zwischen 1000 und 100000 Einträgen simuliert. Wie aus den Tabellen zu entnehmen ist, 
-sind wir zu dem Ergebnis gekommen, dass die Laufzeit/Anzahl der Zyklen direkt von der 
+sind wir zu dem Ergebnis gekommen, dass die Laufzeit/Zyklenanzahl direkt von der 
 TLB-Größe abhängt. Gerade der TLB mit 1024 Einträgen weist dabei eine sehr hohe Hit-Rate
 mit durchgängig über 99% auf, während TLBs mit Größe <= 16 bereits bei Listen mit 
-Länge 1000 schon unter 60% liegen. 
+Länge 1000 unter 60% liegen. 
 
-Die Bedeutung des TLB zeigt sich hier aber besonders dadurch, dass selbst der TLB mit nur 
+Die Bedeutung des TLB zeigt sich besonders dadurch, dass selbst der TLB mit nur 
 einer Cachezeile circa 25% weniger Zyklen als eine Implementation ohne TLB benötigt. Der 
 TLB mit den meisten Einträgen kann die Anzahl der Zyklen sogar knapp halbieren.
+
+Ein großer Nachteil ist allerdings, dass mit steigender TLB-Größe auch die Anzahl an benötigten
+Gattern anwächst. Deshalb sind TLBs in den meisten Anwendungen nicht größer als die hier getesteten.
 
 #### Hit-Rate in Abhängigkeit von der TLB-Größe
 |        | 1       | 2       | 4       | 8       | 16      | 32     | 64      | 128     | 256     | 512     | 1024    | 
@@ -50,6 +53,10 @@ TLB mit den meisten Einträgen kann die Anzahl der Zyklen sogar knapp halbieren.
 | 50000   | 40400000 | 30453000 | 30430200 | 30386200 | 30305600 | 30136000 | 29801600 | 29130800 | 27799000 | 25058000 | 20494000 | 20494000 |
 | 100000  | 80800000 | 60931400 | 60904800 | 60859800 | 60761400 | 60583800 | 60204400 | 59461800 | 58000600 | 55017000 | 49064200 | 40972200 |
 
+#### Gatter in Abhängigkeit von der TLB-Größe
+|   | 0 | 1   | 2   | 4    | 8    | 16   | 32   | 64    | 128   | 256   | 512    | 1024   |   |
+|---|---|-----|-----|------|------|------|------|-------|-------|-------|--------|--------|---|
+|   | 0 | 304 | 576 | 1112 | 2162 | 4216 | 8230 | 16068 | 31362 | 61184 | 119294 | 232444 |   |
 
 ## Beiträge der Gruppenmitglieder
 
