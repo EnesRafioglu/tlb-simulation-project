@@ -99,6 +99,10 @@ void MMU::mmuOperation() {
       sigTlbWriteEnabled.write(true);
 
       // Wait delta cycles for the real tlb latency
+      //? We don't need to wait for the TLB latency here, because we checked
+      //? `tlbLatency <= memoryLatency` when parsing the arguments in C.
+      //? Writing to the TLB can therefore be done while waiting for the upcoming
+      //? memory operation.
       wait(sigTlbFound.default_event());
 
       sigTlbWriteEnabled.write(false);

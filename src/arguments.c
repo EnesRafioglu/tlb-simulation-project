@@ -231,6 +231,19 @@ enum PARSE_ARG_RESULT parse_arguments(int argc, char* argv[],
     cnf->tlbLatency = 0;
   }
 
+  // Ensure that the memoryLatency is at least as large as the TLB latency
+  //? This allows us the assumption that writing to the TLB can be done while
+  //? waiting for the memory to respond to the actual access.
+  if (cnf->memoryLatency < cnf->tlbLatency) {
+    fprintf(stderr,
+            "Error: memory-latency must be greater than or equal to "
+            "tlb-latency (%u < %u)\n\n",
+            cnf->memoryLatency, cnf->tlbLatency);
+
+    return PARSE_ARG_RESULT_ERROR;
+  }
+
+
   return PARSE_ARG_RESULT_SUCCESS;
 }
 

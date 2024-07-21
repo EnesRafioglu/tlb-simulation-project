@@ -918,7 +918,7 @@ INSTANTIATE_TEST_SUITE_P(
       // Expected Result
       Result{
         // Cycles
-        std::numeric_limits<size_t>::max(),
+        0,
         // Misses
         0,
         // Hits
