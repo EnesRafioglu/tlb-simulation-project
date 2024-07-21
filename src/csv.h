@@ -2,28 +2,53 @@
 
 #include <stdint.h>
 
-/**
- * @struct Request
- * @brief Represents the request to be processed by the simulation.
- *
- * This struct contains the address to be accessed, the data to be written
- * or the data that was read, and the write enable flag.
- */
-struct Request {
-    uint32_t addr;
-    uint32_t data;
-    int we;
-};
+#include "shared_types.h"
 
+/**
+ * @brief Enumeration representing the possible results of interacting with a
+ * CSV file.
+ */
+enum CSV_RESULT {
+  /** The CSV file was parsed successfully. */
+  CSV_RESULT_SUCCESS,
+  /** The CSV file does not exist. */
+  CSV_RESULT_NO_FILE,
+  /** The CSV file already exists. */
+  CSV_RESULT_FILE_EXISTS,
+  /** The given path is a directory, not a file. */
+  CSV_RESULT_IS_DIRECTORY,
+  /** The CSV file could not be opened because of lacking permissions. */
+  CSV_RESULT_PERMISSION_DENIED,
+  /** An I/O error occurred while trying to read the CSV file. */
+  CSV_RESULT_IO_ERROR,
+  /** An error occurred while parsing the CSV file. */
+  CSV_RESULT_PARSE_ERROR
+};
 
 /**
  * Parses a CSV file and returns an array of Request structures.
  * Every line should contain the write enable flag, the address
  * and if the write enable flag is set, the data to be written.
- * If non valid input is found, an error message is printed to stderr and the program is aborted.
- * 
+ * If non valid input is found, an error message is printed to stderr and the
+ * program is aborted.
+ *
  * @param filename The path to the CSV file to be parsed.
- * @param line_count A pointer to an integer that will store the number of lines in the CSV file.
- * @return A pointer to an array of Request structures containing the parsed data.
+ * @param line_count A pointer to an integer that will store the number of lines
+ * in the CSV file.
+ * @param requests A pointer to an array of Request structures that will store
+ * the parsed data.
+ * @return The result of parsing the CSV file.
  */
-struct Request* parse_csv(const char* filename, int* line_count);
+enum CSV_RESULT parse_csv(const char* filename, size_t* line_count,
+                          struct Request** requests);
+
+/**
+ * Saves an array of Request structures to a CSV file.
+ *
+ * @param filename The name of the CSV file to be created or overwritten.
+ * @param num_requests The number of requests to be saved.
+ * @param requests An array of Request structures to be saved.
+ * @return The result of saving the requests to the CSV file.
+ */
+enum CSV_RESULT save_requests_to_csv(const char* filename, size_t num_requests,
+                                     struct Request* requests);

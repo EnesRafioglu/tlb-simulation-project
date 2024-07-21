@@ -1,28 +1,28 @@
 #* Find source and header files in the current directory and its subdirectories
-SOURCES_C    := $(shell find * -name '*.c')
-SOURCES_CPP  := $(shell find * -name '*.cpp')
+SOURCES_C    := $(shell find src -name '*.c')
+SOURCES_CPP  := $(shell find src -name '*.cpp')
 
-HEADERS_C    := $(shell find * -name '*.h')
-HEADERS_CPP  := $(shell find * -name '*.hpp')
+HEADERS_C    := $(shell find src -name '*.h')
+HEADERS_CPP  := $(shell find src -name '*.hpp')
 
 OBJECTS_C    := $(addprefix build/,$(SOURCES_C:.c=.o))
 OBJECTS_CPP  := $(addprefix build/,$(SOURCES_CPP:.cpp=.o))
 
 SRC_DIRS     := $(shell find src -type d)
 
-SYSTEMC_PATH := ../systemc
+SYSTEMC_PATH := $(realpath ../systemc)
 
 BUILD_DIR    := build
-OUTPUT       := tla
+OUTPUT       := tlb
 
 
 #* Define the compiler and flags
-COMPILER_FLAGS_C       := -std=gnu17 -Wall -Wextra
-COMPILER_FLAGS_CPP     := -std=gnu++14 -Wall -Wextra -I$(SYSTEMC_PATH)/include
+COMPILER_FLAGS_C       := -std=gnu17 -Wall -Wextra -DLANG_C
+COMPILER_FLAGS_CPP     := -std=gnu++14 -Wall -Wextra -isystem$(SYSTEMC_PATH)/include -DLANG_CPP
 
 LINKER_FLAGS           := -L$(SYSTEMC_PATH)/lib -lsystemc -Wl,-rpath,$(SYSTEMC_PATH)/lib
 
-COMPILER_FLAGS_DEBUG   := -g
+COMPILER_FLAGS_DEBUG   := -g -fsanitize=address -fsanitize=undefined -DDEBUG
 COMPILER_FLAGS_RELEASE := -O2
 
 
@@ -40,7 +40,7 @@ endif
 
 #* Build instructions
 
-all: debug
+all: release
 
 # Create build directory if it does not exist
 mkbuilddir:
@@ -68,9 +68,16 @@ $(BUILD_DIR)/%.o: %.cpp $(HEADERS_C) $(HEADERS_CPP)
 $(OUTPUT): $(OBJECTS_C) $(OBJECTS_CPP)
 	$(COMPILER_CPP) $(COMPILER_FLAGS_CPP) $(OBJECTS_C) $(OBJECTS_CPP) $(LINKER_FLAGS) -o $(OUTPUT)
 
+# Generate doxygen documentation
+doc:
+	doxygen Doxyfile
+
+docs: doc # Alias for doc
+
 # Clean up any previous build
 clean:
 	rm -rf $(BUILD_DIR)
 	rm -f $(OUTPUT)
+	rm -rf docs
 
 .PHONY: all debug release clean

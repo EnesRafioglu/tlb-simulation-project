@@ -27,8 +27,8 @@ enum PARSE_RESULT {
  * This function takes a C-style string as input and attempts to convert it to
  * an integer. Decimals, octals, and hexadecimals are supported. The base is
  * determined by the prefix of the string. If the conversion is successful, the
- * function returns the parsed integer. If the conversion fails, an error
- * message is printed to stderr and the program is aborted.
+ * function returns the parsed integer. If the conversion fails, a corresponding
+ * **PARSE_RESULT** value is returned, indicating the reason for the failure.
  *
  * @param str The C-style string to be parsed.
  * @param value A pointer to the integer where the result will be stored.
@@ -43,8 +43,8 @@ enum PARSE_RESULT parse_string_to_int(const char* str, int* value);
  * an unsigned integer. Decimals, octals, and hexadecimals are supported. The
  * base is determined by the prefix of the string. If the conversion is
  * successful, the function returns the parsed unsigned integer. If the
- * conversion fails, an error message is printed to stderr and the program is
- * aborted.
+ * conversion fails, a corresponding **PARSE_RESULT** value is returned,
+ * indicating the reason for the failure.
  *
  * @param str The C-style string to be parsed.
  * @param value A pointer to the unsigned integer where the result will be
@@ -54,13 +54,50 @@ enum PARSE_RESULT parse_string_to_int(const char* str, int* value);
 enum PARSE_RESULT parse_string_to_uint(const char* str, unsigned int* value);
 
 /**
- * Parses a string into an unsigned 32-bit integer.
+ * @brief Parses a string to an unsigned integer.
  *
- * This function takes a string `str` and attempts to parse it into an unsigned 32-bit integer.
- * If the parsing is successful, the resulting value is stored in the `value` parameter.
+ * This function takes a C-style string as input and attempts to convert it to
+ * an unsigned 32-bit integer. Decimals, octals, and hexadecimals are supported.
+ * The base is determined by the prefix of the string. If the conversion is
+ * successful, the function returns the parsed unsigned integer. If the
+ * conversion fails, a corresponding **PARSE_RESULT** value is returned,
+ * indicating the reason for the failure.
  *
- * @param str The string to be parsed.
- * @param value A pointer to an unsigned 32-bit integer where the parsed value will be stored.
+ * @param str The C-style string to be parsed.
+ * @param value A pointer to the unsigned integer where the result will be
+ * stored.
  * @return The result of the parsing operation.
  */
 enum PARSE_RESULT parse_string_to_uint32(const char* str, uint32_t* value);
+
+/**
+ * Checks if a given number is a power of two.
+ *
+ * @param x The number to check.
+ * @return 1 if the number is a power of two, 0 otherwise.
+ */
+int is_power_of_two(unsigned int x);
+
+/**
+ * Calculates the base-2 logarithm of a 32-bit integer.
+ *
+ * This function calculates the base-2 logarithm of a 32-bit integer.
+ * The function assumes that the input is a power of two. If the input is not a
+ * power of two, the result is undefined.
+ *
+ * @param x The integer to calculate the logarithm of.
+ * @return The base-2 logarithm of the integer.
+ */
+int ilog2(uint32_t x);
+
+/**
+ * Checks if a string has a specific suffix.
+ *
+ * This function takes two parameters: `str` and `suffix`. It checks if the
+ * string `str` ends with the suffix `suffix`.
+ *
+ * @param str The string to check.
+ * @param suffix The suffix to compare against.
+ * @return 1 if the string has the specified suffix, 0 otherwise.
+ */
+int has_suffix(const char* str, const char* suffix);

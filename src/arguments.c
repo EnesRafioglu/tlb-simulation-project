@@ -1,18 +1,33 @@
 #include "arguments.h"
 
 #include <getopt.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "util.h"
+
+/**
+ * Macro to check the result of an expression and return PARSE_ARG_RESULT_ERROR
+ * if the expression is not equal to 0.
+ *
+ * @param expr The expression to be evaluated.
+ * @return PARSE_ARG_RESULT_ERROR if the expression is not equal to 0, otherwise
+ * _nothing_.
+ */
+#define RETURNS_0_OR_ARG_PARSE_ERROR(expr) \
+  if ((expr) != 0) {                       \
+    return PARSE_ARG_RESULT_ERROR;         \
+  }
 
 // Forward declarations
 
 bool maybe_print_requires_value(int opt);
-void print_usage();
-void validate_and_extract_number(char* argName, char* str, void* value,
-                                 bool isSigned, int min);
+int validate_and_extract_number(char* argName, char* str, void* value,
+                                bool isSigned, const void* min, bool pow2,
+                                bool allowZero);
 
 /**
  * @brief Enumeration of command line options.
@@ -30,6 +45,7 @@ enum OPTION {
   OPTION_TLB_LATENCY = 4,
   OPTION_MEMORY_LATENCY = 5,
   OPTION_TRACE_FILE = 6,
+  OPTION_OUTPUT = 'o',
   OPTION_HELP = 'h',
 
   /** Represents the value returned when an unknown option is encountered */
@@ -51,72 +67,150 @@ static struct option longArguments[] = {
     {"tlb-latency", required_argument, NULL, OPTION_TLB_LATENCY},
     {"memory-latency", required_argument, NULL, OPTION_MEMORY_LATENCY},
     {"tf", required_argument, NULL, OPTION_TRACE_FILE},
+    {"output", required_argument, NULL, OPTION_OUTPUT},
     {"help", no_argument, NULL, OPTION_HELP},
 };
 
-void parse_arguments(int argc, char* argv[], struct Configuration* cnf) {
+enum PARSE_ARG_RESULT parse_arguments(int argc, char* argv[],
+                                      struct Configuration* cnf) {
   // Set sensible defaults
-  cnf->cycles = 1000;
+  cnf->cycles = INT_MAX - 1;
   cnf->blocksize = 64;
-  cnf->v2bBlockOffset = 0;
+  cnf->v2bBlockOffset = 1;
   cnf->tlbSize = 16;
   cnf->tlbLatency = 10;
   cnf->memoryLatency = 100;
   cnf->traceFile = NULL;
+  cnf->outputFile = NULL;
 
   cnf->inputFile = NULL;
+
+  // Common minimum values for use with `validate_and_extract_number`
+  const int signedZero = 0;
+  const unsigned int unsignedZero = 0;
+  const unsigned int unsignedOne = 1;
 
   // Parse the command line arguments
   int opt;
   opterr = 0;
   while (optind < argc) {
-    if ((opt = getopt_long(argc, argv, "c:h", longArguments, NULL)) != -1) {
+    if ((opt = getopt_long(argc, argv, "c:o:h", longArguments, NULL)) != -1) {
       switch (opt) {
         case OPTION_CYCLES:
-          validate_and_extract_number("cycles", optarg, &cnf->cycles, true, 1);
-          break;
-        case OPTION_BLOCKSIZE:
-          validate_and_extract_number("blocksize", optarg, &cnf->blocksize,
-                                      false, 1);
-          break;
-        case OPTION_V2B_BLOCK_OFFSET:
-          validate_and_extract_number("v2b-block-offset", optarg,
-                                      &cnf->v2bBlockOffset, false, 0);
-          break;
-        case OPTION_TLB_SIZE:
-          validate_and_extract_number("tlb-size", optarg, &cnf->tlbSize, false,
-                                      1);
-          break;
-        case OPTION_TLB_LATENCY:
-          validate_and_extract_number("tlb-latency", optarg, &cnf->tlbLatency,
-                                      false, 0);
-          break;
-        case OPTION_MEMORY_LATENCY:
-          validate_and_extract_number("memory-latency", optarg,
-                                      &cnf->memoryLatency, false, 0);
-          break;
-        case OPTION_TRACE_FILE:
-          cnf->traceFile = optarg;
-          break;
-        case OPTION_HELP:
-          print_usage();
-          exit(0);
-        case OPTION_UNKNOWN:
-          if (!maybe_print_requires_value(optopt)) {
-            fprintf(stderr, "Error: Invalid option: -%c\n\n", optopt);
+          RETURNS_0_OR_ARG_PARSE_ERROR(validate_and_extract_number(
+              "cycles", optarg, &cnf->cycles, true, &signedZero, false, true));
+
+          // Ensure that cycles is not INT_MAX because that could lead to an
+          // ambiguous `Result`
+          if (cnf->cycles == INT_MAX) {
+            fprintf(stderr,
+                    "Error: cycles may not be INT_MAX as it could lead to an "
+                    "ambiguous Result\n\n");
+            return PARSE_ARG_RESULT_ERROR;
           }
 
-          print_usage();
-          exit(22);
+          // Warn if cycles is zero
+          if (cnf->cycles == 0) {
+            fprintf(stderr,
+                    "WARN: cycles is set to zero, simulation will not run\n");
+          }
+
+          break;
+        case OPTION_BLOCKSIZE:
+          RETURNS_0_OR_ARG_PARSE_ERROR(
+              validate_and_extract_number("blocksize", optarg, &cnf->blocksize,
+                                          false, &unsignedOne, true, false));
+
+          // Ensure that the blocksize is at least one word long
+          if (cnf->blocksize < 4) {
+            fprintf(stderr,
+                    "Error: blocksize must be greater than or equal to 4\n\n");
+            return PARSE_ARG_RESULT_ERROR;
+          }
+
+          break;
+        case OPTION_V2B_BLOCK_OFFSET:
+          RETURNS_0_OR_ARG_PARSE_ERROR(validate_and_extract_number(
+              "v2b-block-offset", optarg, &cnf->v2bBlockOffset, false,
+              &unsignedZero, false, true));
+          break;
+        case OPTION_TLB_SIZE:
+          RETURNS_0_OR_ARG_PARSE_ERROR(
+              validate_and_extract_number("tlb-size", optarg, &cnf->tlbSize,
+                                          false, &unsignedOne, true, true));
+
+          // Warn if TLB size is zero
+          if (cnf->tlbSize == 0) {
+            fprintf(
+                stderr,
+                "WARN: TLB size is set to zero, simulation will not use TLB\n");
+          }
+
+          break;
+        case OPTION_TLB_LATENCY:
+          RETURNS_0_OR_ARG_PARSE_ERROR(validate_and_extract_number(
+              "tlb-latency", optarg, &cnf->tlbLatency, false, &unsignedZero,
+              false, true));
+          break;
+        case OPTION_MEMORY_LATENCY:
+          RETURNS_0_OR_ARG_PARSE_ERROR(validate_and_extract_number(
+              "memory-latency", optarg, &cnf->memoryLatency, false,
+              &unsignedZero, false, true));
+          break;
+        case OPTION_TRACE_FILE:
+          if (optarg == NULL || strlen(optarg) == 0) {
+            fprintf(stderr, "Error: --tf requires a value\n\n");
+            return PARSE_ARG_RESULT_ERROR;
+          }
+
+          // Strip the .vcd suffix if it exists
+          if (has_suffix(optarg, ".vcd")) {
+            optarg[strlen(optarg) - 4] = '\0';
+          }
+
+          cnf->traceFile = optarg;
+          break;
+        case OPTION_OUTPUT:
+          if (optarg == NULL || strlen(optarg) == 0) {
+            fprintf(stderr, "Error: --output requires a value\n\n");
+            return PARSE_ARG_RESULT_ERROR;
+          }
+
+          // Check for CSV suffix
+          if (!has_suffix(optarg, ".csv")) {
+            fprintf(stderr,
+                    "WARN: Output file does not have a .csv suffix - will "
+                    "continue for now\n");
+          }
+
+          cnf->outputFile = optarg;
+          break;
+        case OPTION_HELP:
+          return PARSE_ARG_RESULT_HELP;
+        case OPTION_UNKNOWN:
+          if (!maybe_print_requires_value(optopt)) {
+            fprintf(stderr, "Error: Unknown option: -%c\n\n", optopt);
+          }
+
+          return PARSE_ARG_RESULT_ERROR;
         default:
-          exit(22);
+          printf("Unknown option: %c\n", opt);
+          return PARSE_ARG_RESULT_ERROR;
       }
     } else {
       // Check if the input file has already been set
       if (cnf->inputFile != NULL) {
         fprintf(stderr, "Error: Multiple input files specified\n\n");
-        print_usage();
-        exit(22);
+
+        return PARSE_ARG_RESULT_ERROR;
+      }
+
+      // Check if the input file is a CSV file
+      if (!has_suffix(argv[optind], ".csv")) {
+        fprintf(
+            stderr,
+            "WARN: Input file does not have a .csv suffix - will continue for "
+            "now\n");
       }
 
       // Set the input file
@@ -124,6 +218,46 @@ void parse_arguments(int argc, char* argv[], struct Configuration* cnf) {
       optind++;
     }
   }
+
+  // Check if the input file was specified
+  if (cnf->inputFile == NULL) {
+    fprintf(stderr, "Error: No input file specified\n\n");
+
+    return PARSE_ARG_RESULT_ERROR;
+  }
+
+  // Ensure that tlbLatency is zero if tlbSize is zero
+  if (cnf->tlbSize == 0) {
+    cnf->tlbLatency = 0;
+  }
+
+  // Ensure that the memoryLatency is at least as large as the TLB latency
+  //? This allows us the assumption that writing to the TLB can be done while
+  //? waiting for the memory to respond to the actual access.
+  if (cnf->memoryLatency < cnf->tlbLatency) {
+    fprintf(stderr,
+            "Error: memory-latency must be greater than or equal to "
+            "tlb-latency (%u < %u)\n\n",
+            cnf->memoryLatency, cnf->tlbLatency);
+
+    return PARSE_ARG_RESULT_ERROR;
+  }
+
+  // Ensure that arguments result in a valid address format
+  const int numOffsetBits = ilog2(cnf->blocksize);
+  const int numPageBits = 32 - numOffsetBits;
+  const int numIndexBits = cnf->tlbSize > 0 ? ilog2(cnf->tlbSize) : 0;
+
+  if (numOffsetBits < 2 || numPageBits < 0 || numIndexBits > numPageBits ||
+      numPageBits + numOffsetBits != 32) {
+    fprintf(stderr,
+            "Error: Address format does not add up to 32 bits - please adjust "
+            "blocksize and tlb-size\n\n");
+
+    return PARSE_ARG_RESULT_ERROR;
+  }
+
+  return PARSE_ARG_RESULT_SUCCESS;
 }
 
 /**
@@ -163,27 +297,27 @@ bool maybe_print_requires_value(int opt) {
   return true;
 }
 
-/**
- * @brief Prints the usage information for the program.
- *
- * This function prints the usage information for the program, including the
- * available options and their descriptions.
- */
-void print_usage() {
-  printf("Usage: ./tla [OPTIONS] INPUT_FILE\n");
-  printf("Options:\n");
-  printf("  --cycles=<int>\t\tNumber of cycles to simulate\n");
-  printf("  --blocksize=<unsigned>\tSize of a memory block in bytes\n");
+void print_usage(const char* program_name) {
   printf(
+      "Usage: %s [OPTIONS] INPUT_FILE\n"
+      "Options:\n"
+      "  --cycles=<int>\t\tNumber of cycles to simulate (default: INT_MAX - "
+      "1)\n"
+      "  --blocksize=<unsigned>\tSize of a memory block in bytes (default: "
+      "64)\n"
       "  --v2b-block-offset=<unsigned>\tOffset used to \"translate\" virtual "
-      "addresses to physical ones\n");
-  printf("  --tlb-size=<unsigned>\t\tNumber of entries in the TLB\n");
-  printf("  --tlb-latency=<unsigned>\tThe latency of the TLB in cycles\n");
-  printf(
+      "addresses to physical ones (default: 1)\n"
+      "  --tlb-size=<unsigned>\t\tNumber of entries in the TLB (default: 16)\n"
+      "  --tlb-latency=<unsigned>\tThe latency of the TLB in cycles (default: "
+      "10)\n"
       "  --memory-latency=<unsigned>\tThe latency of the main memory in "
-      "cycles\n");
-  printf("  --tf=<path>\t\t\tOutput path for a trace file with all signals\n");
-  printf("  --help\t\t\tPrint this help message\n");
+      "cycles (default: 100)\n"
+      "  --tf=<path>\t\t\tOutput path for a trace file with all signals "
+      "(optional)\n"
+      "  --output=<path>\t\tOutput path for the simulation read results "
+      "(optional)\n"
+      "  --help\t\t\tPrint this help message\n",
+      program_name);
 }
 
 /**
@@ -193,18 +327,23 @@ void print_usage() {
  * depending on the value of `isSigned`. It then checks if the parsing was
  * successful and if the parsed value is greater than or equal to the minimum
  * value specified by `min`. If any validation fails, an error message is
- * printed and the program exits with a status code of 22.
+ * printed and the function returns `1`.
  *
  * @param argName The name of the argument being validated.
  * @param str The string to parse.
  * @param value A pointer to the variable where the parsed value will be stored.
  * @param isSigned A boolean indicating whether the value should be treated as
  *                 signed or unsigned.
- * @param min The minimum value that the parsed value must be greater than or
- *            equal to.
+ * @param min A pointer to the minimum value that the parsed value must be
+ *            greater than or equal to.
+ * @param pow2 A boolean indicating whether the value must be a power of 2.
+ * @param allowZero A boolean indicating whether the value can be zero
+ * (overrides the minimum value and pow2 check).
+ * @return 0 if the validation was successful, 1 otherwise.
  */
-void validate_and_extract_number(char* argName, char* str, void* value,
-                                 bool isSigned, int min) {
+int validate_and_extract_number(char* argName, char* str, void* value,
+                                bool isSigned, const void* min, bool pow2,
+                                bool allowZero) {
   // Parse the string to an integer
   enum PARSE_RESULT result;
   if (isSigned) {
@@ -218,28 +357,49 @@ void validate_and_extract_number(char* argName, char* str, void* value,
     case PARSE_SUCCESS:
       break;
     case PARSE_OUT_OF_RANGE:
-      fprintf(stderr, "Error: %s is out of range\n\n", argName);
-      print_usage();
-      exit(22);
+      if (isSigned) {
+        fprintf(stderr,
+                "Error: %s is out of range for the interval (%d, %d)\n\n",
+                argName, INT_MIN, INT_MAX);
+      } else {
+        fprintf(stderr,
+                "Error: %s is out of range for the interval (%u, %u)\n\n",
+                argName, 0, UINT_MAX);
+      }
+      return 1;
     case PARSE_NO_DIGITS:
       fprintf(stderr, "Error: %s does not contain any digits\n\n", argName);
-      print_usage();
-      exit(22);
+      return 1;
     case PARSE_CHARACTERS_LEFT:
       fprintf(stderr, "Error: %s contains extra characters\n\n", argName);
-      print_usage();
-      exit(22);
+      return 1;
     case PARSE_GENERAL_ERROR:
       fprintf(stderr, "Error: %s is not a valid number\n\n", argName);
-      print_usage();
-      exit(22);
+      return 1;
+  }
+
+  // Check if the value can be zero -> bypass additional checks
+  if (allowZero && ((isSigned && *(int*)value == 0) ||
+                    (!isSigned && *(unsigned int*)value == 0))) {
+    return 0;
+  }
+
+  // Check if the value must be a power of 2
+  if (pow2 && !is_power_of_two(*(unsigned int*)value)) {
+    fprintf(stderr, "Error: %s must be a power of 2\n\n", argName);
+    return 1;
   }
 
   // Check if the value is greater than or equal to the minimum
-  if (*(int*)value < min) {
+  if (isSigned && *(int*)value < *(int*)min) {
     fprintf(stderr, "Error: %s must be greater than or equal to %d\n\n",
-            argName, min);
-    print_usage();
-    exit(22);
+            argName, *(int*)min);
+    return 1;
+  } else if (!isSigned && *(unsigned int*)value < *(unsigned int*)min) {
+    fprintf(stderr, "Error: %s must be greater than or equal to %u\n\n",
+            argName, *(unsigned int*)min);
+    return 1;
   }
+
+  return 0;
 }

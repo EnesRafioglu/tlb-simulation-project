@@ -1,6 +1,19 @@
 #pragma once
 
 /**
+ * @enum PARSE_ARG_RESULT
+ * @brief Represents the possible results of parsing command line arguments.
+ */
+enum PARSE_ARG_RESULT {
+  /** Parsing was successful */
+  PARSE_ARG_RESULT_SUCCESS,
+  /** An error occurred during parsing */
+  PARSE_ARG_RESULT_ERROR,
+  /** Help option was specified */
+  PARSE_ARG_RESULT_HELP
+};
+
+/**
  * @struct Configuration
  * @brief Represents the configuration parameters for a simulation.
  *
@@ -37,16 +50,37 @@ struct Configuration {
   const char* traceFile;
   /** The input file that contains the data to be processed. */
   const char* inputFile;
+  /** The output file for the simulation read results. */
+  const char* outputFile;
 };
 
 /**
- * Parses the command line arguments and populates the Configuration structure.
- * The function sets sensible defaults for all configuration parameters before
+ * @brief Parses the command line arguments and populates the Configuration
+ * structure.
+ *
+ * This function sets sensible defaults for all configuration parameters before
  * parsing the command line arguments. If an error occurs during parsing, an
- * error message is printed to stderr and the program is aborted.
+ * error message is printed to stderr and the function returns
+ * `PARSE_ARG_RESULT_ERROR`.
+ *
+ * This function also handles the `--help` option, which prints the usage and
+ * returns `PARSE_ARG_RESULT_HELP`.
  *
  * @param argc The number of command line arguments.
  * @param argv An array of strings containing the command line arguments.
  * @param cnf A pointer to the Configuration structure to be populated.
+ *
+ * @return The result of parsing the command line arguments.
  */
-void parse_arguments(int argc, char* argv[], struct Configuration* cnf);
+enum PARSE_ARG_RESULT parse_arguments(int argc, char* argv[],
+                                      struct Configuration* cnf);
+
+/**
+ * @brief Prints the usage information for the program.
+ *
+ * This function prints the usage information for the program, including the
+ * available options and their descriptions.
+ *
+ * @param program_name The name of this program to be used in the usage message.
+ */
+void print_usage(const char* program_name);
