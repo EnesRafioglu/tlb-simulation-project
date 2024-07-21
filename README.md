@@ -2,42 +2,19 @@
 
 ## Recherche und Implementierung eines TLB in SystemC
 
-## Was ist ein Translation Lookaside Buffer?
+Ein Translation Lookaside Buffer (TLB) ist ein spezieller Cache, der die
+Adressübersetzung von virtuellen in physische Adressen beschleunigt.
+Moderne TLBs haben meist 32 bis 512 Einträge, größere TLBs sind in Servern und
+High-End-Systemen üblich. Die Effektivität eines TLBs bemisst sich in seiner
+Trefferrate, welche häufig über 99% liegt. Ein TLB-Treffer kann Speicherzugriffe
+erheblich beschleunigen, indem er mehrere Speicherzugriffe für die Adressübersetzung
+vermeidet.
 
-Translation Lookaside Buffers (TLBs) spielen eine zentrale Rolle in modernen
-Computersystemen, indem sie die Geschwindigkeit der virtuellen Speicheradressierung
-erhöhen. Sie speichern kürzlich verwendete Adressübersetzungen, um den Zugriff
-auf den physischen Speicher zu beschleunigen und die Anzahl der notwendigen
-Speicherzugriffe zu reduzieren. Dies ist besonders wichtig in Systemen mit hohen
-Anforderungen an die Speicherleistung, da eine effiziente Adressübersetzung die
-Gesamtleistung erheblich verbessern kann.
-
-## TLBs in modernen Systemen
-
-Typischerweise haben moderne TLBs eine Größe von etwa 32 bis 512 Einträgen,
-wobei größere TLBs in Server- und High-End-Computing-Umgebungen zu finden sind.
-Die Effektivität eines TLBs wird durch die Trefferrate bestimmt, die oft über
-99% liegt. Ein Treffer im TLB kann Speicherzugriffe um Größenordnungen
-beschleunigen, indem er die Notwendigkeit mehrerer Speicherzugriffe für die
-Adressübersetzung eliminiert.
-
-TLB Zugriffe sind extrem schnell, oft im Bereich von wenigen, einstelligen
-CPU-Zyklen. Im Gegensatz dazu können Adressübersetzungen ohne TLB-Unterstützung,
-die einen vollständigen Page-Table-Walk erfordern, deutlich länger dauern. Viele
-moderne Systeme verwenden außerdem mehrstufige Page-Tables um den benötigten
-Speicher für die Adressübersetzung zu reduzieren. Dies führt jedoch zu zusätzlich
-benötigten Speicherzugriffen, die durch die Verwendung eines TLBs vermieden
-werden können.
-
-Selbst moderne Systeme haben typischerweise Hauptspeicherzugriffszeiten von 
-typischerweise 100 oder mehr CPU-Zyklen. Durch die Verwendung eines TLBs kann
-die Anzahl der Speicherzugriffe für die Adressübersetzung erheblich reduziert
-werden, was zu einer erheblichen Verbesserung der Gesamtleistung führt.
-
-
-Für weiterführende Informationen verweisen wir auf die PDF
-`Literaturrecherche_Enes_Rafioglu.pdf`, die von einem unserer Gruppenmitglieder
-als Präsentationsersatzleistung ausgearbeitet wurde.
+TLB-Zugriffe dauern nur wenige CPU-Zyklen, während vollständige Page-Table-Walks
+ohne TLB-Unterstützung deutlich länger brauchen. Mehrstufige Page-Tables in modernen
+Systemen reduzieren den Speicherbedarf, erhöhen jedoch die Zugriffszeiten, die
+ein TLB minimieren kann. Hauptspeicherzugriffe dauern oft 100 oder mehr CPU-Zyklen;
+TLBs verringern diese Zahl erheblich und verbessern so die Gesamtleistung.
 
 
 ## Ergebnis der Berechnung der Summe über einer verketteten Liste
